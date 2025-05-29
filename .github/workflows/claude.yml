@@ -19,9 +19,9 @@ jobs:
       (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: read
-      issues: read
+      contents: write
+      pull-requests: write
+      issues: write
       id-token: write
     steps:
       - name: Checkout repository
@@ -31,12 +31,8 @@ jobs:
 
       - name: Run Claude Code
         id: claude
-        uses: jr413/claude-code-action@beta
+        uses: jr413/claude-code-action@main
         with:
-          # Option 1: Use Anthropic API key (commented out for OAuth)
-          # anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          
-          # Option 2: Use OAuth for Claude Max subscribers (ACTIVE)
           use_oauth: "true"
           claude_access_token: ${{ secrets.CLAUDE_ACCESS_TOKEN }}
           claude_refresh_token: ${{ secrets.CLAUDE_REFRESH_TOKEN }}
