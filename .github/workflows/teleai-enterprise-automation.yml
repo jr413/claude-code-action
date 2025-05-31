@@ -192,6 +192,16 @@ jobs:
           - [ ] **Testing:** All tests passing with >90% coverage
           - [ ] **Documentation:** Complete and accurate documentation
 
+          ## 🤖 Need Help? Ask Claude!
+          
+          **@claude** can help you with this implementation! Just mention **@claude** in a comment with your question or request. For example:
+          
+          - \"@claude help me implement the API authentication\"
+          - \"@claude review my database schema design\"
+          - \"@claude suggest best practices for error handling\"
+          - \"@claude write unit tests for this component\"
+          - \"@claude show me example code for this functionality\"
+
           ## 🔗 Resources and Documentation
           - [TeleAI Pro API Documentation](https://teleai-pro-api.onrender.com/docs)
           - [Implementation Repository](../../)
@@ -251,6 +261,30 @@ jobs:
             ISSUE_URL=$(echo "$ISSUE_RESPONSE" | jq -r '.html_url')
             echo "✅ Successfully created issue #$ISSUE_NUMBER: $TITLE"
             echo "🔗 Issue URL: $ISSUE_URL"
+            
+            # Add a welcome comment with @claude mention to activate the bot
+            WELCOME_COMMENT="🚀 **Implementation issue created!** 
+
+This issue is ready for development. 
+
+**@claude** is available to help with this implementation. You can ask Claude for:
+- Code examples and implementation guidance
+- Best practices and architecture advice  
+- Code reviews and testing strategies
+- Debugging help and problem solving
+
+Just mention **@claude** in a comment with your specific question or request!"
+
+            jq -n --arg body "$WELCOME_COMMENT" '{body: $body}' > /tmp/comment_payload.json
+            
+            curl -s -X POST \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github.v3+json" \
+              -H "Content-Type: application/json" \
+              "https://api.github.com/repos/${{ github.repository }}/issues/$ISSUE_NUMBER/comments" \
+              -d @/tmp/comment_payload.json > /dev/null
+              
+            echo "💬 Added welcome comment with @claude activation"
           else
             echo "❌ Failed to create issue: $TITLE"
             echo "API Response: $ISSUE_RESPONSE"
