@@ -56,11 +56,6 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Setup Git
-        run: |
-          git config --global user.name "TeleAI Automation"
-          git config --global user.email "automation@teleai.dev"
-
       - name: Create implementation issue
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -221,22 +216,29 @@ jobs:
 
           echo "Creating issue: $TITLE"
 
-          # Create the issue using GitHub CLI with explicit repository
-          gh issue create \
-            --repo "${{ github.repository }}" \
-            --title "$TITLE" \
-            --body "$ISSUE_BODY" \
-            --label "$LABELS" \
-            --assignee "@me"
+          # Create the issue using GitHub REST API directly
+          LABELS_JSON=$(echo "$LABELS" | jq -R 'split(",") | map(gsub(" "; ""))')
+          
+          ISSUE_RESPONSE=$(curl -X POST \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/${{ github.repository }}/issues" \
+            -d "{
+              \"title\": $(echo "$TITLE" | jq -R .),
+              \"body\": $(echo "$ISSUE_BODY" | jq -R .),
+              \"labels\": $LABELS_JSON,
+              \"assignees\": [\"${{ github.actor }}\"]
+            }")
 
-          if [ $? -eq 0 ]; then
-            echo "✅ Successfully created issue: $TITLE"
+          if echo "$ISSUE_RESPONSE" | jq -e '.number' > /dev/null 2>&1; then
+            ISSUE_NUMBER=$(echo "$ISSUE_RESPONSE" | jq -r '.number')
+            ISSUE_URL=$(echo "$ISSUE_RESPONSE" | jq -r '.html_url')
+            echo "✅ Successfully created issue #$ISSUE_NUMBER: $TITLE"
+            echo "🔗 Issue URL: $ISSUE_URL"
           else
             echo "❌ Failed to create issue: $TITLE"
-            echo "Debug info:"
-            echo "Repository: ${{ github.repository }}"
-            echo "Working directory: $(pwd)"
-            echo "Git status: $(git status 2>&1 || echo 'Git not available')"
+            echo "API Response: $ISSUE_RESPONSE"
             exit 1
           fi
 
