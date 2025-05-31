@@ -53,6 +53,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Git
+        run: |
+          git config --global user.name "TeleAI Automation"
+          git config --global user.email "automation@teleai.dev"
 
       - name: Create implementation issue
         env:
@@ -214,8 +221,9 @@ jobs:
 
           echo "Creating issue: $TITLE"
 
-          # Create the issue using GitHub CLI
+          # Create the issue using GitHub CLI with explicit repository
           gh issue create \
+            --repo "${{ github.repository }}" \
             --title "$TITLE" \
             --body "$ISSUE_BODY" \
             --label "$LABELS" \
@@ -225,6 +233,10 @@ jobs:
             echo "✅ Successfully created issue: $TITLE"
           else
             echo "❌ Failed to create issue: $TITLE"
+            echo "Debug info:"
+            echo "Repository: ${{ github.repository }}"
+            echo "Working directory: $(pwd)"
+            echo "Git status: $(git status 2>&1 || echo 'Git not available')"
             exit 1
           fi
 
