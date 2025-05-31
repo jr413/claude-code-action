@@ -28,7 +28,10 @@ jobs:
           gh issue create \
             --title "@claude API Integration - TeleAI Core" \
             --label "api,core,phase-1" \
-            --body "## API Integration Task
+            --assignee "@me" \
+            --body "@claude Please implement this task.
+
+## API Integration Task
 
           Complete TeleAI API integration with authentication and error handling.
 
@@ -58,7 +61,10 @@ jobs:
           gh issue create \
             --title "@claude Database Schema Design" \
             --label "database,core,phase-1" \
-            --body "## Database Schema Task
+            --assignee "@me" \
+            --body "@claude Please implement this task.
+
+## Database Schema Task
 
           Design complete data model for audio processing system.
 
@@ -85,7 +91,10 @@ jobs:
           gh issue create \
             --title "@claude Dashboard Interface" \
             --label "ui,frontend,phase-1" \
-            --body "## Dashboard UI Task
+            --assignee "@me" \
+            --body "@claude Please implement this task.
+
+## Dashboard UI Task
 
           Create modern responsive dashboard for audio management.
 
@@ -112,7 +121,10 @@ jobs:
           gh issue create \
             --title "@claude Audio Processing Workflow" \
             --label "workflow,backend,phase-1" \
-            --body "## Workflow Engine Task
+            --assignee "@me" \
+            --body "@claude Please implement this task.
+
+## Workflow Engine Task
 
           Implement end-to-end audio processing pipeline.
 
@@ -139,7 +151,10 @@ jobs:
           gh issue create \
             --title "@claude Testing Framework" \
             --label "testing,qa,phase-1" \
-            --body "## Testing Suite Task
+            --assignee "@me" \
+            --body "@claude Please implement this task.
+
+## Testing Suite Task
 
           Create comprehensive testing framework.
 
