@@ -26,7 +26,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh issue create \
-            --title "API Integration - TeleAI Core" \
+            --title "@claude API Integration - TeleAI Core" \
             --label "api,core,phase-1" \
             --body "## API Integration Task
 
@@ -56,7 +56,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh issue create \
-            --title "Database Schema Design" \
+            --title "@claude Database Schema Design" \
             --label "database,core,phase-1" \
             --body "## Database Schema Task
 
@@ -83,7 +83,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh issue create \
-            --title "Dashboard Interface" \
+            --title "@claude Dashboard Interface" \
             --label "ui,frontend,phase-1" \
             --body "## Dashboard UI Task
 
@@ -110,7 +110,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh issue create \
-            --title "Audio Processing Workflow" \
+            --title "@claude Audio Processing Workflow" \
             --label "workflow,backend,phase-1" \
             --body "## Workflow Engine Task
 
@@ -137,7 +137,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh issue create \
-            --title "Testing Framework" \
+            --title "@claude Testing Framework" \
             --label "testing,qa,phase-1" \
             --body "## Testing Suite Task
 
