@@ -45,22 +45,22 @@ jobs:
     - name: Read input files
       id: read-inputs
       run: |
+        # Create temporary files to avoid GitHub Actions output issues
+        mkdir -p temp
+        
         if [ -f "input/①要件定義.md" ]; then
-          echo "requirements<<EOF" >> $GITHUB_OUTPUT
-          cat "input/①要件定義.md" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          cp "input/①要件定義.md" temp/requirements.md
+          echo "requirements_file=temp/requirements.md" >> $GITHUB_OUTPUT
         fi
         
         if [ -f "input/②技術定義.yaml" ]; then
-          echo "tech-spec<<EOF" >> $GITHUB_OUTPUT
-          cat "input/②技術定義.yaml" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          cp "input/②技術定義.yaml" temp/tech-spec.yaml
+          echo "tech_spec_file=temp/tech-spec.yaml" >> $GITHUB_OUTPUT
         fi
         
         if [ -f "input/③v0モックアップ" ]; then
-          echo "mockup<<EOF" >> $GITHUB_OUTPUT
-          cat "input/③v0モックアップ" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          cp "input/③v0モックアップ" temp/mockup.md
+          echo "mockup_file=temp/mockup.md" >> $GITHUB_OUTPUT
         fi
 
     - name: Generate project with Claude
@@ -69,38 +69,107 @@ jobs:
       run: |
         mkdir -p output
         
-        # Claude API を使ってプロジェクト生成
+        # Read input files
+        REQUIREMENTS=""
+        TECH_SPEC=""
+        MOCKUP=""
+        
+        if [ -f "temp/requirements.md" ]; then
+          REQUIREMENTS=$(cat temp/requirements.md)
+        fi
+        
+        if [ -f "temp/tech-spec.yaml" ]; then
+          TECH_SPEC=$(cat temp/tech-spec.yaml)
+        fi
+        
+        if [ -f "temp/mockup.md" ]; then
+          MOCKUP=$(cat temp/mockup.md)
+        fi
+        
+        # Create prompt for Claude
+        cat > prompt.txt << 'PROMPT_EOF'
+        Based on these requirements, generate a complete ${{ github.event.inputs.project_type }} project with ${{ github.event.inputs.tech_stack }} tech stack.
+
+        Please provide a complete project structure with all necessary files. Format your response with clear file separators like:
+        
+        === filename.ext ===
+        [file content]
+        === END ===
+
+        Requirements:
+PROMPT_EOF
+        
+        echo "$REQUIREMENTS" >> prompt.txt
+        echo -e "\n\nTech Spec:" >> prompt.txt
+        echo "$TECH_SPEC" >> prompt.txt
+        echo -e "\n\nMockup:" >> prompt.txt
+        echo "$MOCKUP" >> prompt.txt
+        echo -e "\n\nGenerate complete project structure with all necessary files including package.json, Dockerfile, source code, and documentation." >> prompt.txt
+        
+        # Call Claude API
         curl -X POST "https://api.anthropic.com/v1/messages" \
           -H "Content-Type: application/json" \
           -H "x-api-key: $CLAUDE_API_KEY" \
           -H "anthropic-version: 2023-06-01" \
-          -d '{
-            "model": "claude-3-sonnet-20240229",
-            "max_tokens": 4000,
-            "messages": [{
-              "role": "user",
-              "content": "Based on these requirements, generate a complete ${{ github.event.inputs.project_type }} project with ${{ github.event.inputs.tech_stack }} tech stack:\n\nRequirements:\n${{ steps.read-inputs.outputs.requirements }}\n\nTech Spec:\n${{ steps.read-inputs.outputs.tech-spec }}\n\nMockup:\n${{ steps.read-inputs.outputs.mockup }}\n\nGenerate complete project structure with all necessary files."
-            }]
-          }' > claude_response.json
-          
-        # レスポンスからコードを抽出してファイル生成
+          -d @- << API_EOF > claude_response.json
+        {
+          "model": "claude-3-sonnet-20240229",
+          "max_tokens": 8000,
+          "messages": [{
+            "role": "user",
+            "content": $(cat prompt.txt | jq -Rs .)
+          }]
+        }
+API_EOF
+        
+        # Extract and create files from Claude response
         node -e "
           const fs = require('fs');
-          const response = JSON.parse(fs.readFileSync('claude_response.json'));
-          const content = response.content[0].text;
-          
-          // コードブロックを抽出してファイル生成
-          const codeBlocks = content.match(/\`\`\`[\s\S]*?\`\`\`/g) || [];
-          codeBlocks.forEach((block, index) => {
-            const lines = block.split('\n');
-            const filename = lines[0].replace(/\`\`\`/, '').trim() || \`file_\${index}.txt\`;
-            const code = lines.slice(1, -1).join('\n');
+          try {
+            const response = JSON.parse(fs.readFileSync('claude_response.json'));
+            const content = response.content[0].text;
+            console.log('Claude response received:', content.substring(0, 200) + '...');
             
-            const dir = \`output/\${filename}\`.split('/').slice(0, -1).join('/');
-            if (dir) fs.mkdirSync(dir, { recursive: true });
+            // Extract files using === filename === pattern
+            const filePattern = /=== ([^=]+) ===\n([\s\S]*?)\n=== END ===/g;
+            let match;
+            let fileCount = 0;
             
-            fs.writeFileSync(\`output/\${filename}\`, code);
-          });
+            while ((match = filePattern.exec(content)) !== null) {
+              const filename = match[1].trim();
+              const fileContent = match[2];
+              
+              const fullPath = \`output/\${filename}\`;
+              const dir = fullPath.split('/').slice(0, -1).join('/');
+              
+              if (dir && dir !== 'output') {
+                fs.mkdirSync(dir, { recursive: true });
+              }
+              
+              fs.writeFileSync(fullPath, fileContent);
+              console.log(\`Created: \${fullPath}\`);
+              fileCount++;
+            }
+            
+            if (fileCount === 0) {
+              console.log('No files extracted, creating basic structure...');
+              // Fallback: create basic files
+              fs.writeFileSync('output/package.json', JSON.stringify({
+                name: '${{ github.event.inputs.project_type }}',
+                version: '1.0.0',
+                main: 'index.js',
+                scripts: { start: 'node index.js' }
+              }, null, 2));
+              
+              fs.writeFileSync('output/index.js', 'console.log(\"Hello World!\");');
+              fs.writeFileSync('output/README.md', '# Generated Project\n\nThis project was generated automatically.');
+            }
+            
+            console.log(\`Total files created: \${fileCount}\`);
+          } catch (error) {
+            console.error('Error processing Claude response:', error);
+            process.exit(1);
+          }
         "
 
     - name: Setup Google Cloud
