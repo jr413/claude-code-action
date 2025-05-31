@@ -153,7 +153,14 @@ jobs:
           @claude can assist with this implementation."
 
   summary:
-    needs: [create-api-issue, create-database-issue, create-ui-issue, create-workflow-issue, create-testing-issue]
+    needs:
+      [
+        create-api-issue,
+        create-database-issue,
+        create-ui-issue,
+        create-workflow-issue,
+        create-testing-issue,
+      ]
     runs-on: ubuntu-latest
     steps:
       - name: Generate Summary
