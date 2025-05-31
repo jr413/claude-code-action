@@ -63,9 +63,10 @@ jobs:
           echo "mockup_file=temp/mockup.md" >> $GITHUB_OUTPUT
         fi
 
-    - name: Generate project with Claude
+    - name: Generate project with Claude (OAuth)
       env:
-        CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+        CLAUDE_CLIENT_ID: ${{ secrets.CLAUDE_CLIENT_ID }}
+        CLAUDE_CLIENT_SECRET: ${{ secrets.CLAUDE_CLIENT_SECRET }}
       run: |
         mkdir -p output
         
@@ -85,6 +86,22 @@ jobs:
         if [ -f "temp/mockup.md" ]; then
           MOCKUP=$(cat temp/mockup.md)
         fi
+        
+        # Step 1: Get OAuth token
+        echo "🔐 Getting OAuth token..."
+        TOKEN_RESPONSE=$(curl -s -X POST "https://api.anthropic.com/v1/oauth/token" \
+          -H "Content-Type: application/x-www-form-urlencoded" \
+          -d "grant_type=client_credentials&client_id=$CLAUDE_CLIENT_ID&client_secret=$CLAUDE_CLIENT_SECRET")
+        
+        ACCESS_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token')
+        
+        if [ "$ACCESS_TOKEN" = "null" ] || [ -z "$ACCESS_TOKEN" ]; then
+          echo "❌ Failed to get OAuth token"
+          echo "Response: $TOKEN_RESPONSE"
+          exit 1
+        fi
+        
+        echo "✅ OAuth token obtained successfully"
         
         # Create prompt for Claude
         cat > prompt.txt << 'PROMPT_EOF'
@@ -106,10 +123,11 @@ PROMPT_EOF
         echo "$MOCKUP" >> prompt.txt
         echo -e "\n\nGenerate complete project structure with all necessary files including package.json, Dockerfile, source code, and documentation." >> prompt.txt
         
-        # Call Claude API
+        # Step 2: Call Claude API with OAuth token
+        echo "🤖 Calling Claude API..."
         curl -X POST "https://api.anthropic.com/v1/messages" \
           -H "Content-Type: application/json" \
-          -H "x-api-key: $CLAUDE_API_KEY" \
+          -H "Authorization: Bearer $ACCESS_TOKEN" \
           -H "anthropic-version: 2023-06-01" \
           -d @- << API_EOF > claude_response.json
         {
@@ -121,6 +139,21 @@ PROMPT_EOF
           }]
         }
 API_EOF
+        
+        # Check if Claude API call was successful
+        if [ $? -ne 0 ]; then
+          echo "❌ Claude API call failed"
+          exit 1
+        fi
+        
+        # Check for API errors in response
+        if jq -e '.error' claude_response.json > /dev/null; then
+          echo "❌ Claude API returned error:"
+          jq '.error' claude_response.json
+          exit 1
+        fi
+        
+        echo "✅ Claude API call successful"
         
         # Extract and create files from Claude response
         node -e "
