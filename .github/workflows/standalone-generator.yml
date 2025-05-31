@@ -1,0 +1,154 @@
+name: Standalone Code Generator
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_type:
+        description: 'Type of project to generate'
+        required: true
+        default: 'todo-app'
+        type: choice
+        options:
+          - 'todo-app'
+          - 'ecommerce'
+          - 'blog'
+          - 'dashboard'
+      tech_stack:
+        description: 'Technology stack'
+        required: true
+        default: 'react-node'
+        type: choice
+        options:
+          - 'react-node'
+          - 'vue-python'
+          - 'svelte-rust'
+          - 'next-prisma'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Install dependencies
+      run: |
+        npm install -g bun
+        bun install
+        
+    - name: Read input files
+      id: read-inputs
+      run: |
+        if [ -f "input/①要件定義.md" ]; then
+          echo "requirements<<EOF" >> $GITHUB_OUTPUT
+          cat "input/①要件定義.md" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        fi
+        
+        if [ -f "input/②技術定義.yaml" ]; then
+          echo "tech-spec<<EOF" >> $GITHUB_OUTPUT
+          cat "input/②技術定義.yaml" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        fi
+        
+        if [ -f "input/③v0モックアップ" ]; then
+          echo "mockup<<EOF" >> $GITHUB_OUTPUT
+          cat "input/③v0モックアップ" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Generate project with Claude
+      env:
+        CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+      run: |
+        mkdir -p output
+        
+        # Claude API を使ってプロジェクト生成
+        curl -X POST "https://api.anthropic.com/v1/messages" \
+          -H "Content-Type: application/json" \
+          -H "x-api-key: $CLAUDE_API_KEY" \
+          -H "anthropic-version: 2023-06-01" \
+          -d '{
+            "model": "claude-3-sonnet-20240229",
+            "max_tokens": 4000,
+            "messages": [{
+              "role": "user",
+              "content": "Based on these requirements, generate a complete ${{ github.event.inputs.project_type }} project with ${{ github.event.inputs.tech_stack }} tech stack:\n\nRequirements:\n${{ steps.read-inputs.outputs.requirements }}\n\nTech Spec:\n${{ steps.read-inputs.outputs.tech-spec }}\n\nMockup:\n${{ steps.read-inputs.outputs.mockup }}\n\nGenerate complete project structure with all necessary files."
+            }]
+          }' > claude_response.json
+          
+        # レスポンスからコードを抽出してファイル生成
+        node -e "
+          const fs = require('fs');
+          const response = JSON.parse(fs.readFileSync('claude_response.json'));
+          const content = response.content[0].text;
+          
+          // コードブロックを抽出してファイル生成
+          const codeBlocks = content.match(/\`\`\`[\s\S]*?\`\`\`/g) || [];
+          codeBlocks.forEach((block, index) => {
+            const lines = block.split('\n');
+            const filename = lines[0].replace(/\`\`\`/, '').trim() || \`file_\${index}.txt\`;
+            const code = lines.slice(1, -1).join('\n');
+            
+            const dir = \`output/\${filename}\`.split('/').slice(0, -1).join('/');
+            if (dir) fs.mkdirSync(dir, { recursive: true });
+            
+            fs.writeFileSync(\`output/\${filename}\`, code);
+          });
+        "
+
+    - name: Setup Google Cloud
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        
+    - name: Build and deploy
+      run: |
+        cd output
+        
+        # Docker build
+        if [ -f "Dockerfile" ]; then
+          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/generated-app .
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/generated-app
+          
+          # Deploy to Cloud Run
+          gcloud run deploy generated-app \
+            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/generated-app \
+            --platform managed \
+            --region us-central1 \
+            --allow-unauthenticated
+        fi
+        
+    - name: Commit generated files
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        git add output/
+        git commit -m "Generated ${{ github.event.inputs.project_type }} project with ${{ github.event.inputs.tech_stack }}" || exit 0
+        git push
+        
+    - name: Create summary
+      run: |
+        echo "## 🚀 Project Generation Complete!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Project Type:** ${{ github.event.inputs.project_type }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Tech Stack:** ${{ github.event.inputs.tech_stack }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Generated Files:" >> $GITHUB_STEP_SUMMARY
+        find output/ -type f | head -20 >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Deployment Status:" >> $GITHUB_STEP_SUMMARY
+        if gcloud run services describe generated-app --region=us-central1 2>/dev/null; then
+          echo "✅ Deployed to Cloud Run" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 URL: $(gcloud run services describe generated-app --region=us-central1 --format='value(status.url)')" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Deployment failed or skipped" >> $GITHUB_STEP_SUMMARY
+        fi
