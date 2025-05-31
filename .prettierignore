@@ -1,0 +1,2 @@
+# Ignore files with complex YAML syntax
+.github/workflows/teleai-enterprise-automation.yml
