@@ -139,15 +139,15 @@ jobs:
             if get_oauth_token; then
               # Create prompt for Claude
               cat > prompt.txt << 'PROMPT_EOF'
-        Based on these requirements, generate a complete ${{ github.event.inputs.project_type }} project with ${{ github.event.inputs.tech_stack }} tech stack.
+Based on these requirements, generate a complete ${{ github.event.inputs.project_type }} project with ${{ github.event.inputs.tech_stack }} tech stack.
 
-        Please provide a complete project structure with all necessary files. Format your response with clear file separators like:
-        
-        === filename.ext ===
-        [file content]
-        === END ===
+Please provide a complete project structure with all necessary files. Format your response with clear file separators like:
 
-        Requirements:
+=== filename.ext ===
+[file content]
+=== END ===
+
+Requirements:
 PROMPT_EOF
               
               echo "$REQUIREMENTS" >> prompt.txt
@@ -162,15 +162,15 @@ PROMPT_EOF
                 -H "Content-Type: application/json" \
                 -H "Authorization: Bearer $ACCESS_TOKEN" \
                 -H "anthropic-version: 2023-06-01" \
-                -d @- << API_EOF
-        {
-          "model": "claude-3-sonnet-20240229",
-          "max_tokens": 8000,
-          "messages": [{
-            "role": "user",
-            "content": $(cat prompt.txt | jq -Rs .)
-          }]
-        }
+                -d @- << 'API_EOF'
+{
+  "model": "claude-3-sonnet-20240229",
+  "max_tokens": 8000,
+  "messages": [{
+    "role": "user",
+    "content": "$(cat prompt.txt | jq -Rs .)"
+  }]
+}
 API_EOF
               )
               
@@ -282,110 +282,110 @@ API_EOF
           mkdir -p output/src output/public
           
           cat > output/package.json << 'PKG_EOF'
-        {
-          "name": "simple-todo-app",
-          "version": "1.0.0",
-          "private": true,
-          "dependencies": {
-            "react": "^18.2.0",
-            "react-dom": "^18.2.0",
-            "react-scripts": "5.0.1"
-          },
-          "scripts": {
-            "start": "react-scripts start",
-            "build": "react-scripts build",
-            "test": "react-scripts test",
-            "eject": "react-scripts eject"
-          },
-          "eslintConfig": {
-            "extends": [
-              "react-app",
-              "react-app/jest"
-            ]
-          },
-          "browserslist": {
-            "production": [
-              ">0.2%",
-              "not dead",
-              "not op_mini all"
-            ],
-            "development": [
-              "last 1 chrome version",
-              "last 1 firefox version",
-              "last 1 safari version"
-            ]
-          }
-        }
+{
+  "name": "simple-todo-app",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
 PKG_EOF
           
           cat > output/src/App.js << 'APP_EOF'
-        import React, { useState } from 'react';
-        import './App.css';
+import React, { useState } from 'react';
+import './App.css';
 
-        function App() {
-          const [todos, setTodos] = useState([]);
-          const [input, setInput] = useState('');
+function App() {
+  const [todos, setTodos] = useState([]);
+  const [input, setInput] = useState('');
 
-          const addTodo = () => {
-            if (input.trim()) {
-              setTodos([...todos, { id: Date.now(), text: input, completed: false }]);
-              setInput('');
-            }
-          };
+  const addTodo = () => {
+    if (input.trim()) {
+      setTodos([...todos, { id: Date.now(), text: input, completed: false }]);
+      setInput('');
+    }
+  };
 
-          const toggleTodo = (id) => {
-            setTodos(todos.map(todo => 
-              todo.id === id ? { ...todo, completed: !todo.completed } : todo
-            ));
-          };
+  const toggleTodo = (id) => {
+    setTodos(todos.map(todo => 
+      todo.id === id ? { ...todo, completed: !todo.completed } : todo
+    ));
+  };
 
-          const deleteTodo = (id) => {
-            setTodos(todos.filter(todo => todo.id !== id));
-          };
+  const deleteTodo = (id) => {
+    setTodos(todos.filter(todo => todo.id !== id));
+  };
 
-          return (
-            <div className="App">
-              <header className="App-header">
-                <h1>🗂️ My Todo App</h1>
-              </header>
-              <main className="App-main">
-                <div className="todo-input">
-                  <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addTodo()}
-                    placeholder="➕ 新しいタスクを追加..."
-                  />
-                  <button onClick={addTodo}>追加</button>
-                </div>
-                <div className="todo-stats">
-                  <span>📊 合計: {todos.length}タスク | 未完了: {todos.filter(t => !t.completed).length} | 完了: {todos.filter(t => t.completed).length}</span>
-                </div>
-                <ul className="todo-list">
-                  {todos.map(todo => (
-                    <li key={todo.id} className={todo.completed ? 'completed' : ''}>
-                      <input
-                        type="checkbox"
-                        checked={todo.completed}
-                        onChange={() => toggleTodo(todo.id)}
-                      />
-                      <span className="todo-text">{todo.text}</span>
-                      <button onClick={() => deleteTodo(todo.id)} className="delete-btn">削除</button>
-                    </li>
-                  ))}
-                </ul>
-                {todos.length === 0 && (
-                  <div className="empty-state">
-                    <p>📝 タスクがありません。上記から新しいタスクを追加してください。</p>
-                  </div>
-                )}
-              </main>
-            </div>
-          );
-        }
+  return (
+    <div className="App">
+      <header className="App-header">
+        <h1>🗂️ My Todo App</h1>
+      </header>
+      <main className="App-main">
+        <div className="todo-input">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && addTodo()}
+            placeholder="➕ 新しいタスクを追加..."
+          />
+          <button onClick={addTodo}>追加</button>
+        </div>
+        <div className="todo-stats">
+          <span>📊 合計: {todos.length}タスク | 未完了: {todos.filter(t => !t.completed).length} | 完了: {todos.filter(t => t.completed).length}</span>
+        </div>
+        <ul className="todo-list">
+          {todos.map(todo => (
+            <li key={todo.id} className={todo.completed ? 'completed' : ''}>
+              <input
+                type="checkbox"
+                checked={todo.completed}
+                onChange={() => toggleTodo(todo.id)}
+              />
+              <span className="todo-text">{todo.text}</span>
+              <button onClick={() => deleteTodo(todo.id)} className="delete-btn">削除</button>
+            </li>
+          ))}
+        </ul>
+        {todos.length === 0 && (
+          <div className="empty-state">
+            <p>📝 タスクがありません。上記から新しいタスクを追加してください。</p>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
 
-        export default App;
+export default App;
 APP_EOF
           
           cat > output/src/App.css << 'CSS_EOF'
