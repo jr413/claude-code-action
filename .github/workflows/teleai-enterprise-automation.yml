@@ -264,17 +264,7 @@ jobs:
             echo "🔗 Issue URL: $ISSUE_URL"
             
             # Add a welcome comment with @claude mention to activate the bot
-            WELCOME_COMMENT="🚀 **Implementation issue created!** 
-
-This issue is ready for development. 
-
-**@claude** is available to help with this implementation. You can ask Claude for:
-- Code examples and implementation guidance
-- Best practices and architecture advice  
-- Code reviews and testing strategies
-- Debugging help and problem solving
-
-Just mention **@claude** in a comment with your specific question or request!"
+            WELCOME_COMMENT="🚀 **Implementation issue created!**"$'\n\n'"This issue is ready for development."$'\n\n'"**@claude** is available to help with this implementation. You can ask Claude for:"$'\n'"- Code examples and implementation guidance"$'\n'"- Best practices and architecture advice"$'\n'"- Code reviews and testing strategies"$'\n'"- Debugging help and problem solving"$'\n\n'"Just mention **@claude** in a comment with your specific question or request!"
 
             jq -n --arg body "$WELCOME_COMMENT" '{body: $body}' > /tmp/comment_payload.json
             
