@@ -4,135 +4,135 @@ on:
   workflow_dispatch:
     inputs:
       project_type:
-        description: 'Type of project to generate'
+        description: "Type of project to generate"
         required: true
-        default: 'todo-app'
+        default: "todo-app"
         type: choice
         options:
-          - 'todo-app'
-          - 'ecommerce'
-          - 'blog'
-          - 'dashboard'
+          - "todo-app"
+          - "ecommerce"
+          - "blog"
+          - "dashboard"
       tech_stack:
-        description: 'Technology stack'
+        description: "Technology stack"
         required: true
-        default: 'react-node'
+        default: "react-node"
         type: choice
         options:
-          - 'react-node'
-          - 'vue-python'
-          - 'svelte-rust'
-          - 'next-prisma'
+          - "react-node"
+          - "vue-python"
+          - "svelte-rust"
+          - "next-prisma"
 
 jobs:
   generate:
     runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        
-    - name: Install dependencies
-      run: |
-        npm install -g bun
-        bun install || npm install
-        
-    - name: Read input files
-      id: read-inputs
-      run: |
-        # Create temporary files to avoid GitHub Actions output issues
-        mkdir -p temp
-        
-        if [ -f "input/①要件定義.md" ]; then
-          cp "input/①要件定義.md" temp/requirements.md
-          echo "requirements_file=temp/requirements.md" >> $GITHUB_OUTPUT
-          echo "✅ Requirements file found"
-        else
-          echo "⚠️ Requirements file not found"
-        fi
-        
-        if [ -f "input/②技術定義.yaml" ]; then
-          cp "input/②技術定義.yaml" temp/tech-spec.yaml
-          echo "tech_spec_file=temp/tech-spec.yaml" >> $GITHUB_OUTPUT
-          echo "✅ Tech spec file found"
-        else
-          echo "⚠️ Tech spec file not found"
-        fi
-        
-        if [ -f "input/③v0モックアップ" ]; then
-          cp "input/③v0モックアップ" temp/mockup.md
-          echo "mockup_file=temp/mockup.md" >> $GITHUB_OUTPUT
-          echo "✅ Mockup file found"
-        else
-          echo "⚠️ Mockup file not found"
-        fi
 
-    - name: Generate project with Claude (OAuth)
-      env:
-        CLAUDE_CLIENT_ID: ${{ secrets.CLAUDE_CLIENT_ID }}
-        CLAUDE_CLIENT_SECRET: ${{ secrets.CLAUDE_CLIENT_SECRET }}
-        PROJECT_TYPE: ${{ github.event.inputs.project_type }}
-        TECH_STACK: ${{ github.event.inputs.tech_stack }}
-      run: |
-        chmod +x scripts/generate-project.sh
-        ./scripts/generate-project.sh
-        
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: generated-project-${{ github.event.inputs.project_type }}-${{ github.event.inputs.tech_stack }}
-        path: output/
-        retention-days: 7
-        
-    - name: Create summary
-      run: |
-        echo "# 🎉 Project Generation Complete!" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "## 📋 Configuration" >> $GITHUB_STEP_SUMMARY
-        echo "- **Project Type**: ${{ github.event.inputs.project_type }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Tech Stack**: ${{ github.event.inputs.tech_stack }}" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "## 📁 Input Files" >> $GITHUB_STEP_SUMMARY
-        
-        if [ -f "temp/requirements.md" ]; then
-          echo "- ✅ Requirements file found" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ❌ Requirements file not found" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -f "temp/tech-spec.yaml" ]; then
-          echo "- ✅ Tech spec file found" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ❌ Tech spec file not found" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        if [ -f "temp/mockup.md" ]; then
-          echo "- ✅ Mockup file found" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ❌ Mockup file not found" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "## 📦 Generated Files" >> $GITHUB_STEP_SUMMARY
-        echo '```' >> $GITHUB_STEP_SUMMARY
-        find output -type f | sort >> $GITHUB_STEP_SUMMARY
-        echo '```' >> $GITHUB_STEP_SUMMARY
-        
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "## 📥 Download" >> $GITHUB_STEP_SUMMARY
-        echo "You can download the generated project from the **Artifacts** section of this workflow run." >> $GITHUB_STEP_SUMMARY
-        
-    - name: Check for errors
-      if: failure()
-      run: |
-        echo "## ❌ Generation Failed" >> $GITHUB_STEP_SUMMARY
-        echo "Please check the logs for details." >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🔍 Debug Information" >> $GITHUB_STEP_SUMMARY
-        echo "- CLAUDE_CLIENT_ID present: ${{ secrets.CLAUDE_CLIENT_ID != '' }}" >> $GITHUB_STEP_SUMMARY
-        echo "- CLAUDE_CLIENT_SECRET present: ${{ secrets.CLAUDE_CLIENT_SECRET != '' }}" >> $GITHUB_STEP_SUMMARY
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: |
+          npm install -g bun
+          bun install || npm install
+
+      - name: Read input files
+        id: read-inputs
+        run: |
+          # Create temporary files to avoid GitHub Actions output issues
+          mkdir -p temp
+
+          if [ -f "input/①要件定義.md" ]; then
+            cp "input/①要件定義.md" temp/requirements.md
+            echo "requirements_file=temp/requirements.md" >> $GITHUB_OUTPUT
+            echo "✅ Requirements file found"
+          else
+            echo "⚠️ Requirements file not found"
+          fi
+
+          if [ -f "input/②技術定義.yaml" ]; then
+            cp "input/②技術定義.yaml" temp/tech-spec.yaml
+            echo "tech_spec_file=temp/tech-spec.yaml" >> $GITHUB_OUTPUT
+            echo "✅ Tech spec file found"
+          else
+            echo "⚠️ Tech spec file not found"
+          fi
+
+          if [ -f "input/③v0モックアップ" ]; then
+            cp "input/③v0モックアップ" temp/mockup.md
+            echo "mockup_file=temp/mockup.md" >> $GITHUB_OUTPUT
+            echo "✅ Mockup file found"
+          else
+            echo "⚠️ Mockup file not found"
+          fi
+
+      - name: Generate project with Claude (OAuth)
+        env:
+          CLAUDE_CLIENT_ID: ${{ secrets.CLAUDE_CLIENT_ID }}
+          CLAUDE_CLIENT_SECRET: ${{ secrets.CLAUDE_CLIENT_SECRET }}
+          PROJECT_TYPE: ${{ github.event.inputs.project_type }}
+          TECH_STACK: ${{ github.event.inputs.tech_stack }}
+        run: |
+          chmod +x scripts/generate-project.sh
+          ./scripts/generate-project.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-project-${{ github.event.inputs.project_type }}-${{ github.event.inputs.tech_stack }}
+          path: output/
+          retention-days: 7
+
+      - name: Create summary
+        run: |
+          echo "# 🎉 Project Generation Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📋 Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- **Project Type**: ${{ github.event.inputs.project_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tech Stack**: ${{ github.event.inputs.tech_stack }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📁 Input Files" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f "temp/requirements.md" ]; then
+            echo "- ✅ Requirements file found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ Requirements file not found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f "temp/tech-spec.yaml" ]; then
+            echo "- ✅ Tech spec file found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ Tech spec file not found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f "temp/mockup.md" ]; then
+            echo "- ✅ Mockup file found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ Mockup file not found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📦 Generated Files" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          find output -type f | sort >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📥 Download" >> $GITHUB_STEP_SUMMARY
+          echo "You can download the generated project from the **Artifacts** section of this workflow run." >> $GITHUB_STEP_SUMMARY
+
+      - name: Check for errors
+        if: failure()
+        run: |
+          echo "## ❌ Generation Failed" >> $GITHUB_STEP_SUMMARY
+          echo "Please check the logs for details." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔍 Debug Information" >> $GITHUB_STEP_SUMMARY
+          echo "- CLAUDE_CLIENT_ID present: ${{ secrets.CLAUDE_CLIENT_ID != '' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- CLAUDE_CLIENT_SECRET present: ${{ secrets.CLAUDE_CLIENT_SECRET != '' }}" >> $GITHUB_STEP_SUMMARY
