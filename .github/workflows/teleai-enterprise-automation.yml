@@ -216,20 +216,35 @@ jobs:
 
           echo "Creating issue: $TITLE"
 
-          # Create the issue using GitHub REST API directly
-          LABELS_JSON=$(echo "$LABELS" | jq -R 'split(",") | map(gsub(" "; ""))')
+          # Create properly formatted JSON payload using temporary files
+          cat > /tmp/issue_payload.json << 'JSON_EOF'
+          {
+            "title": "",
+            "body": "",
+            "labels": [],
+            "assignees": []
+          }
+          JSON_EOF
 
-          ISSUE_RESPONSE=$(curl -X POST \
+          # Use jq to properly set the values with escaping
+          LABELS_ARRAY=$(echo "$LABELS" | tr ',' '\n' | jq -R . | jq -s .)
+          
+          jq --arg title "$TITLE" \
+             --arg body "$ISSUE_BODY" \
+             --argjson labels "$LABELS_ARRAY" \
+             --arg assignee "${{ github.actor }}" \
+             '.title = $title | .body = $body | .labels = $labels | .assignees = [$assignee]' \
+             /tmp/issue_payload.json > /tmp/final_payload.json
+
+          echo "📋 Payload preview:"
+          jq '.title, .labels' /tmp/final_payload.json
+
+          ISSUE_RESPONSE=$(curl -s -X POST \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
             -H "Content-Type: application/json" \
             "https://api.github.com/repos/${{ github.repository }}/issues" \
-            -d "{
-              \"title\": $(echo "$TITLE" | jq -R .),
-              \"body\": $(echo "$ISSUE_BODY" | jq -R .),
-              \"labels\": $LABELS_JSON,
-              \"assignees\": [\"${{ github.actor }}\"]
-            }")
+            -d @/tmp/final_payload.json)
 
           if echo "$ISSUE_RESPONSE" | jq -e '.number' > /dev/null 2>&1; then
             ISSUE_NUMBER=$(echo "$ISSUE_RESPONSE" | jq -r '.number')
