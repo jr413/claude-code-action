@@ -1,0 +1,45 @@
+# 技術スタック定義
+
+# フロントエンド
+frontend:
+  framework: 
+  version: 
+  ui_library: 
+  state_management: 
+  styling: 
+
+# バックエンド
+backend:
+  language: 
+  framework: 
+  version: 
+  database: 
+
+# インフラストラクチャ
+infrastructure:
+  hosting: 
+  deployment: 
+  ci_cd: 
+
+# API
+api:
+  type: 
+  documentation: 
+
+# 認証・認可
+authentication:
+  provider: 
+  method: 
+
+# 開発ツール
+development_tools:
+  version_control: 
+  package_manager: 
+  testing_framework: 
+  linter: 
+
+# その他
+other:
+  monitoring: 
+  logging: 
+  analytics:
