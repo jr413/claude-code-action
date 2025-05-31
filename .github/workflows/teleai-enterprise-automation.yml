@@ -59,8 +59,9 @@ jobs:
       - name: Create implementation issue
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          IMPLEMENTATION_SCOPE: ${{ github.event.inputs.implementation_scope }}
-          DEPLOYMENT_STRATEGY: ${{ github.event.inputs.deployment_strategy }}
+          IMPLEMENTATION_SCOPE: ${{ github.event.inputs.implementation_scope || 'phase_1_core' }}
+          DEPLOYMENT_STRATEGY: ${{ github.event.inputs.deployment_strategy || 'parallel_implementation' }}
+          TARGET_ENVIRONMENT: ${{ github.event.inputs.target_environment || 'bubble_production' }}
           ISSUE_TYPE: ${{ matrix.issue_type }}
         run: |
           echo "🚀 Creating issue for: $ISSUE_TYPE"
@@ -210,7 +211,7 @@ jobs:
           ## 🏗️ Architecture Context
           This component is part of the TeleAI Enterprise Implementation project:
           - **API Base:** https://teleai-pro-api.onrender.com
-          - **Target Environment:** ${{ github.event.inputs.target_environment }}
+          - **Target Environment:** $TARGET_ENVIRONMENT
           - **Integration Level:** Enterprise-grade with scalability
 
           ## 📊 Performance Targets
@@ -301,9 +302,9 @@ Just mention **@claude** in a comment with your specific question or request!"
     steps:
       - name: Generate implementation summary
         env:
-          IMPLEMENTATION_SCOPE: ${{ github.event.inputs.implementation_scope }}
-          DEPLOYMENT_STRATEGY: ${{ github.event.inputs.deployment_strategy }}
-          TARGET_ENV: ${{ github.event.inputs.target_environment }}
+          IMPLEMENTATION_SCOPE: ${{ github.event.inputs.implementation_scope || 'phase_1_core' }}
+          DEPLOYMENT_STRATEGY: ${{ github.event.inputs.deployment_strategy || 'parallel_implementation' }}
+          TARGET_ENV: ${{ github.event.inputs.target_environment || 'bubble_production' }}
         run: |
           echo "## 🎉 TeleAI Enterprise Implementation Successfully Launched!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
