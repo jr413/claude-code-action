@@ -228,7 +228,7 @@ jobs:
 
           # Use jq to properly set the values with escaping
           LABELS_ARRAY=$(echo "$LABELS" | tr ',' '\n' | jq -R . | jq -s .)
-          
+
           jq --arg title "$TITLE" \
              --arg body "$ISSUE_BODY" \
              --argjson labels "$LABELS_ARRAY" \
