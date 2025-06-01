@@ -31,7 +31,7 @@ jobs:
             --assignee "@me" \
             --body "@claude Please implement this task.
 
-## API Integration Task
+          ## API Integration Task
 
           Complete TeleAI API integration with authentication and error handling.
 
@@ -64,7 +64,7 @@ jobs:
             --assignee "@me" \
             --body "@claude Please implement this task.
 
-## Database Schema Task
+          ## Database Schema Task
 
           Design complete data model for audio processing system.
 
@@ -94,7 +94,7 @@ jobs:
             --assignee "@me" \
             --body "@claude Please implement this task.
 
-## Dashboard UI Task
+          ## Dashboard UI Task
 
           Create modern responsive dashboard for audio management.
 
@@ -124,7 +124,7 @@ jobs:
             --assignee "@me" \
             --body "@claude Please implement this task.
 
-## Workflow Engine Task
+          ## Workflow Engine Task
 
           Implement end-to-end audio processing pipeline.
 
@@ -154,7 +154,7 @@ jobs:
             --assignee "@me" \
             --body "@claude Please implement this task.
 
-## Testing Suite Task
+          ## Testing Suite Task
 
           Create comprehensive testing framework.
 
