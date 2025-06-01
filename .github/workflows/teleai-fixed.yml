@@ -28,7 +28,6 @@ jobs:
           gh issue create \
             --title "@claude API Integration - TeleAI Core" \
             --label "api,core,phase-1" \
-            --assignee "@me" \
             --body "@claude Please implement this task.
 
           ## API Integration Task
@@ -61,7 +60,6 @@ jobs:
           gh issue create \
             --title "@claude Database Schema Design" \
             --label "database,core,phase-1" \
-            --assignee "@me" \
             --body "@claude Please implement this task.
 
           ## Database Schema Task
@@ -91,7 +89,6 @@ jobs:
           gh issue create \
             --title "@claude Dashboard Interface" \
             --label "ui,frontend,phase-1" \
-            --assignee "@me" \
             --body "@claude Please implement this task.
 
           ## Dashboard UI Task
@@ -121,7 +118,6 @@ jobs:
           gh issue create \
             --title "@claude Audio Processing Workflow" \
             --label "workflow,backend,phase-1" \
-            --assignee "@me" \
             --body "@claude Please implement this task.
 
           ## Workflow Engine Task
@@ -151,7 +147,6 @@ jobs:
           gh issue create \
             --title "@claude Testing Framework" \
             --label "testing,qa,phase-1" \
-            --assignee "@me" \
             --body "@claude Please implement this task.
 
           ## Testing Suite Task
