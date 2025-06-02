@@ -10,10 +10,10 @@ import * as core from "@actions/core";
 async function run() {
   try {
     const tokens = await getOAuthTokens();
-    
+
     if (tokens) {
       core.info("OAuth tokens validated/refreshed successfully");
-      
+
       // Set outputs for use in subsequent steps
       core.setOutput("access_token", tokens.access_token);
       core.setOutput("refresh_token", tokens.refresh_token);

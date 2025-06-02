@@ -7,12 +7,14 @@
 ## ✨ 主な機能
 
 ### 🔧 基本機能
+
 - **自動Issue作成**: 実装に必要な5つのコアコンポーネントのIssueを自動生成
 - **柔軟な実装スコープ**: Phase 1からフルプラットフォームまで選択可能
 - **マルチ環境対応**: Bubble、Docker、Kubernetesに対応
 - **並列実行**: Matrix strategyによる高速処理
 
 ### 🎯 エンタープライズ機能
+
 - **プロジェクトボード統合**: 自動的にプロジェクトボードを作成し、Issueを追加
 - **高度な通知システム**: Slack、Discord、GitHub Discussionsに対応
 - **包括的なレポート生成**: HTMLレポートとGitHub Summary
@@ -38,10 +40,12 @@
 ## 🔍 修正された問題
 
 ### 元のワークフローの問題点
+
 - 複数行文字列が正しくエスケープされていない
 - `gh issue create`の`--body`パラメータでエラーが発生
 
 ### 解決策
+
 - heredocを使用してテンプレートファイルを作成
 - `--body-file`オプションを使用してファイルから読み込み
 - すべての文字列を適切にエスケープ
@@ -49,6 +53,7 @@
 ## 📊 生成される成果物
 
 ### Issues
+
 1. **API Integration Setup** - TeleAI Core API統合
 2. **Database Schema Design** - エンタープライズデータモデル
 3. **Executive Dashboard Interface** - リアルタイム分析ダッシュボード
@@ -56,12 +61,14 @@
 5. **Comprehensive Testing Framework** - 品質保証
 
 ### アーティファクト
-- **issue-metadata-***: 各Issueのメタデータ（JSON）
+
+- **issue-metadata-\***: 各Issueのメタデータ（JSON）
 - **monitoring-configs**: Prometheus/Grafana設定
 - **deployment-configs**: Docker/Kubernetes設定
 - **implementation-report**: HTML形式の包括的レポート
 
 ### 通知
+
 - GitHub Discussions投稿
 - Slack通知（Webhook URL設定時）
 - Discord通知（Webhook URL設定時）
@@ -69,6 +76,7 @@
 ## 🎨 カスタマイズ
 
 ### 環境変数
+
 ```yaml
 env:
   TELEAI_API_BASE: "https://your-api.com"
@@ -77,6 +85,7 @@ env:
 ```
 
 ### シークレット
+
 - `GITHUB_TOKEN`: 自動的に提供される
 - `SLACK_WEBHOOK_URL`: Slack通知用（オプション）
 - `DISCORD_WEBHOOK_URL`: Discord通知用（オプション）
@@ -104,4 +113,4 @@ env:
 
 ---
 
-*TeleAI Enterprise Automation v2.0.0 - エンタープライズグレードの自動化を実現*
+_TeleAI Enterprise Automation v2.0.0 - エンタープライズグレードの自動化を実現_
