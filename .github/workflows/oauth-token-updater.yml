@@ -4,15 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       access_token:
-        description: 'New Claude Access Token'
+        description: "New Claude Access Token"
         required: true
         type: string
       refresh_token:
-        description: 'New Claude Refresh Token'
+        description: "New Claude Refresh Token"
         required: true
         type: string
       expires_at:
-        description: 'Token Expiration Timestamp'
+        description: "Token Expiration Timestamp"
         required: true
         type: string
 
@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      
+
     steps:
       - name: Update OAuth Secrets
         uses: actions/github-script@v7
@@ -29,13 +29,13 @@ jobs:
           github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           script: |
             const { owner, repo } = context.repo;
-            
+
             // Get public key for secret encryption
             const { data: key } = await github.rest.actions.getRepoPublicKey({
               owner,
               repo
             });
-            
+
             // Helper function to encrypt secret
             const sodium = require('tweetsodium');
             function encryptSecret(secret) {
@@ -44,7 +44,7 @@ jobs:
               const encryptedBytes = sodium.seal(messageBytes, keyBytes);
               return Buffer.from(encryptedBytes).toString('base64');
             }
-            
+
             // Update secrets
             await github.rest.actions.createOrUpdateRepoSecret({
               owner,
@@ -53,7 +53,7 @@ jobs:
               encrypted_value: encryptSecret('${{ inputs.access_token }}'),
               key_id: key.key_id
             });
-            
+
             await github.rest.actions.createOrUpdateRepoSecret({
               owner,
               repo,
@@ -61,7 +61,7 @@ jobs:
               encrypted_value: encryptSecret('${{ inputs.refresh_token }}'),
               key_id: key.key_id
             });
-            
+
             await github.rest.actions.createOrUpdateRepoSecret({
               owner,
               repo,
@@ -69,5 +69,5 @@ jobs:
               encrypted_value: encryptSecret('${{ inputs.expires_at }}'),
               key_id: key.key_id
             });
-            
+
             console.log('✅ OAuth tokens updated successfully!');
