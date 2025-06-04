@@ -104,6 +104,8 @@ runs:
         CLAUDE_ACCESS_TOKEN: ${{ inputs.claude_access_token }}
         CLAUDE_REFRESH_TOKEN: ${{ inputs.claude_refresh_token }}
         CLAUDE_EXPIRES_AT: ${{ inputs.claude_expires_at }}
+        CLAUDE_CLIENT_ID: ${{ inputs.claude_client_id }}
+        CLAUDE_CLIENT_SECRET: ${{ inputs.claude_client_secret }}
         GITHUB_TOKEN: ${{ inputs.github_token || github.token }}
 
     - name: Prepare action

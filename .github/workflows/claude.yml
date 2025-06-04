@@ -33,9 +33,11 @@ jobs:
 
       - name: Run Claude Code
         id: claude
-        uses: ./
+        uses: jr413/claude-code-action@main
         with:
           use_oauth: "true"
           claude_access_token: ${{ secrets.CLAUDE_ACCESS_TOKEN }}
           claude_refresh_token: ${{ secrets.CLAUDE_REFRESH_TOKEN }}
           claude_expires_at: ${{ secrets.CLAUDE_EXPIRES_AT }}
+          claude_client_id: ${{ secrets.CLAUDE_CLIENT_ID }}
+          claude_client_secret: ${{ secrets.CLAUDE_CLIENT_SECRET }}
