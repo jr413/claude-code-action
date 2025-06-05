@@ -68,6 +68,16 @@ inputs:
     description: "Claude AI OAuth token expiration timestamp (required when use_oauth is true)"
     required: false
     default: ""
+  
+  # TeleAI API configuration
+  teleai_api_token:
+    description: "TeleAI Pro API token for audio transcription, sentiment analysis, and summarization"
+    required: false
+    default: ""
+  teleai_api_url:
+    description: "TeleAI Pro API base URL (defaults to https://teleai-pro-api.onrender.com)"
+    required: false
+    default: "https://teleai-pro-api.onrender.com"
 
   timeout_minutes:
     description: "Timeout in minutes for execution"
@@ -162,6 +172,10 @@ runs:
         VERTEX_REGION_CLAUDE_3_5_HAIKU: ${{ env.VERTEX_REGION_CLAUDE_3_5_HAIKU }}
         VERTEX_REGION_CLAUDE_3_5_SONNET: ${{ env.VERTEX_REGION_CLAUDE_3_5_SONNET }}
         VERTEX_REGION_CLAUDE_3_7_SONNET: ${{ env.VERTEX_REGION_CLAUDE_3_7_SONNET }}
+        
+        # TeleAI API configuration
+        TELEAI_API_TOKEN: ${{ inputs.teleai_api_token }}
+        TELEAI_API_URL: ${{ inputs.teleai_api_url }}
 
     - name: Update comment with job link
       if: steps.prepare.outputs.contains_trigger == 'true' && steps.prepare.outputs.claude_comment_id && always()
