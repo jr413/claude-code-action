@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeleAI エグゼクティブダッシュボード</title>
+    <meta name="description" content="TeleAI Pro リアルタイムアナリティクスダッシュボード">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- ヘッダー -->
+        <header class="dashboard-header" role="banner">
+            <div class="header-content">
+                <h1 class="dashboard-title">
+                    <i class="fas fa-chart-line" aria-hidden="true"></i>
+                    TeleAI エグゼクティブダッシュボード
+                </h1>
+                <div class="header-actions">
+                    <button class="btn-refresh" id="refreshBtn" aria-label="データを更新">
+                        <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                        更新
+                    </button>
+                    <button class="btn-export" id="exportBtn" aria-label="データをエクスポート">
+                        <i class="fas fa-download" aria-hidden="true"></i>
+                        エクスポート
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- メインコンテンツ -->
+        <main class="dashboard-main" role="main">
+            <!-- KPIカード -->
+            <section class="kpi-section" aria-labelledby="kpi-heading">
+                <h2 id="kpi-heading" class="section-title">主要業績指標</h2>
+                <div class="kpi-cards">
+                    <div class="kpi-card" role="article">
+                        <div class="kpi-icon">
+                            <i class="fas fa-phone-alt" aria-hidden="true"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <h3 class="kpi-title">総通話数</h3>
+                            <p class="kpi-value" id="totalCalls">-</p>
+                            <p class="kpi-change positive">
+                                <i class="fas fa-arrow-up" aria-hidden="true"></i>
+                                <span>+12.5%</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" role="article">
+                        <div class="kpi-icon">
+                            <i class="fas fa-clock" aria-hidden="true"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <h3 class="kpi-title">平均通話時間</h3>
+                            <p class="kpi-value" id="avgDuration">-</p>
+                            <p class="kpi-change negative">
+                                <i class="fas fa-arrow-down" aria-hidden="true"></i>
+                                <span>-3.2%</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" role="article">
+                        <div class="kpi-icon">
+                            <i class="fas fa-users" aria-hidden="true"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <h3 class="kpi-title">アクティブユーザー</h3>
+                            <p class="kpi-value" id="activeUsers">-</p>
+                            <p class="kpi-change positive">
+                                <i class="fas fa-arrow-up" aria-hidden="true"></i>
+                                <span>+8.7%</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" role="article">
+                        <div class="kpi-icon">
+                            <i class="fas fa-star" aria-hidden="true"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <h3 class="kpi-title">満足度スコア</h3>
+                            <p class="kpi-value" id="satisfactionScore">-</p>
+                            <p class="kpi-change positive">
+                                <i class="fas fa-arrow-up" aria-hidden="true"></i>
+                                <span>+0.3</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- チャートセクション -->
+            <section class="charts-section" aria-labelledby="charts-heading">
+                <h2 id="charts-heading" class="section-title">分析チャート</h2>
+                <div class="charts-grid">
+                    <div class="chart-container" role="img" aria-label="通話数の推移チャート">
+                        <h3 class="chart-title">通話数の推移</h3>
+                        <canvas id="callsChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="chart-container" role="img" aria-label="ユーザー分布チャート">
+                        <h3 class="chart-title">ユーザー分布</h3>
+                        <canvas id="usersChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- テーブルセクション -->
+            <section class="table-section" aria-labelledby="table-heading">
+                <h2 id="table-heading" class="section-title">最近の通話履歴</h2>
+                <div class="table-container">
+                    <table class="data-table" role="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">日時</th>
+                                <th scope="col">ユーザーID</th>
+                                <th scope="col">通話時間</th>
+                                <th scope="col">ステータス</th>
+                                <th scope="col">アクション</th>
+                            </tr>
+                        </thead>
+                        <tbody id="callsTableBody">
+                            <tr>
+                                <td colspan="5" class="loading-cell">データを読み込み中...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- オーディオプレイヤーセクション -->
+            <section class="audio-section" aria-labelledby="audio-heading">
+                <h2 id="audio-heading" class="section-title">通話再生</h2>
+                <div class="audio-player-container">
+                    <div class="audio-player">
+                        <audio id="audioPlayer" controls aria-label="通話録音の再生">
+                            <source src="" type="audio/mpeg">
+                            お使いのブラウザはオーディオ要素をサポートしていません。
+                        </audio>
+                        <div class="audio-info">
+                            <p id="audioTitle">通話を選択してください</p>
+                            <p id="audioDuration" class="audio-duration">--:--</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- ステータスバー -->
+        <footer class="status-bar" role="contentinfo">
+            <div class="status-content">
+                <div class="status-item">
+                    <span class="status-label">接続状態:</span>
+                    <span class="status-value" id="connectionStatus">
+                        <i class="fas fa-circle status-indicator" aria-hidden="true"></i>
+                        接続中
+                    </span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">最終更新:</span>
+                    <span class="status-value" id="lastUpdate">-</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- エクスポートモーダル -->
+    <div class="modal" id="exportModal" role="dialog" aria-labelledby="export-modal-title" aria-hidden="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="export-modal-title">データエクスポート</h3>
+                <button class="modal-close" id="closeModalBtn" aria-label="モーダルを閉じる">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>エクスポート形式を選択してください：</p>
+                <div class="export-options">
+                    <button class="export-option" data-format="csv">
+                        <i class="fas fa-file-csv" aria-hidden="true"></i>
+                        CSV形式
+                    </button>
+                    <button class="export-option" data-format="json">
+                        <i class="fas fa-file-code" aria-hidden="true"></i>
+                        JSON形式
+                    </button>
+                    <button class="export-option" data-format="pdf">
+                        <i class="fas fa-file-pdf" aria-hidden="true"></i>
+                        PDF形式
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js ライブラリ -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- メインスクリプト -->
+    <script src="app.js"></script>
+</body>
+</html>
