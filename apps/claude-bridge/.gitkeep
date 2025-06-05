@@ -1,0 +1,3 @@
+# This file ensures the claude-bridge directory is tracked by git
+# The actual claude-bridge code should be cloned from:
+# https://github.com/badlogic/lemmy/tree/main/apps/claude-bridge
