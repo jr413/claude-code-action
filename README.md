@@ -494,6 +494,31 @@ anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
 This applies to all sensitive values including API keys, access tokens, and credentials.
 We also reccomend that you always use short-lived tokens when possible
 
+## TeleAI API Integration
+
+This project includes a comprehensive TeleAI API client with authentication, rate limiting, and retry logic. See the [TeleAI API documentation](./docs/teleai-api.md) for detailed usage instructions.
+
+### Quick Example
+
+```typescript
+import { TeleAIClient } from './src/teleai'
+
+const client = new TeleAIClient({
+  apiKey: process.env.TELEAI_API_KEY
+})
+
+// Transcribe audio
+const transcription = await client.transcribe({
+  audio: audioBuffer,
+  language: 'en'
+})
+
+// Analyze sentiment
+const sentiment = await client.analyzeSentiment({
+  text: transcription.text
+})
+```
+
 ## License
 
 This project is licensed under the MIT License—see the LICENSE file for details.
