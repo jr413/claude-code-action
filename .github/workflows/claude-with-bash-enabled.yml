@@ -1,0 +1,48 @@
+name: Claude PR Assistant with Bash Enabled
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  claude-code-action:
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issues' && contains(github.event.issue.body, '@claude'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude PR Action with Bash enabled
+        uses: Akira-Papa/claude-code-action@beta
+        with:
+          # OAuth設定（Claude Max subscribers向け）
+          use_oauth: "true"
+          claude_access_token: ${{ secrets.CLAUDE_ACCESS_TOKEN }}
+          claude_refresh_token: ${{ secrets.CLAUDE_REFRESH_TOKEN }}
+          claude_expires_at: ${{ secrets.CLAUDE_EXPIRES_AT }}
+
+          # Bashコマンドの許可設定
+          # 方法1: 特定のコマンドのみ許可（推奨）
+          allowed_tools: "Bash(ls),Bash(pwd),Bash(git status),Bash(git diff),Bash(npm install),Bash(npm test),Bash(npm run build),Bash(yarn),Bash(yarn test),Bash(yarn build)"
+          
+          # 方法2: すべてのBashコマンドを許可（セキュリティリスクあり）
+          # allowed_tools: "Bash"
+
+          timeout_minutes: "60"

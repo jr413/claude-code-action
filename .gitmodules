@@ -1,0 +1,3 @@
+[submodule "haconiwa"]
+	path = haconiwa
+	url = https://github.com/jr413/haconiwa.git
