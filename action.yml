@@ -68,6 +68,14 @@ inputs:
     description: "Claude AI OAuth token expiration timestamp (required when use_oauth is true)"
     required: false
     default: ""
+  claude_client_id:
+    description: "Claude AI OAuth client ID (required when use_oauth is true)"
+    required: false
+    default: ""
+  claude_client_secret:
+    description: "Claude AI OAuth client secret (required when use_oauth is true)"
+    required: false
+    default: ""
 
   timeout_minutes:
     description: "Timeout in minutes for execution"
