@@ -41,7 +41,7 @@ jobs:
           # Bashコマンドの許可設定
           # 方法1: 特定のコマンドのみ許可（推奨）
           allowed_tools: "Bash(ls),Bash(pwd),Bash(git status),Bash(git diff),Bash(npm install),Bash(npm test),Bash(npm run build),Bash(yarn),Bash(yarn test),Bash(yarn build)"
-          
+
           # 方法2: すべてのBashコマンドを許可（セキュリティリスクあり）
           # allowed_tools: "Bash"
 

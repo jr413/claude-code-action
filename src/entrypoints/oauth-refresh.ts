@@ -23,7 +23,7 @@ async function refreshTokens() {
     const expirationTime = parseInt(expiresAt) * 1000;
     const now = Date.now();
     const fiveMinutes = 5 * 60 * 1000;
-    
+
     if (expirationTime > now + fiveMinutes) {
       console.log("Token is still valid, no refresh needed");
       return;
@@ -32,7 +32,7 @@ async function refreshTokens() {
 
   try {
     console.log("Refreshing OAuth tokens...");
-    
+
     const response = await fetch("https://api.anthropic.com/oauth/token", {
       method: "POST",
       headers: {
@@ -47,16 +47,20 @@ async function refreshTokens() {
     });
 
     if (!response.ok) {
-      throw new Error(`Token refresh failed: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Token refresh failed: ${response.status} ${response.statusText}`,
+      );
     }
 
     const data: RefreshTokenResponse = await response.json();
-    
+
     // Set environment variables for the next step
     console.log(`::set-env name=CLAUDE_ACCESS_TOKEN::${data.access_token}`);
     console.log(`::set-env name=CLAUDE_REFRESH_TOKEN::${data.refresh_token}`);
-    console.log(`::set-env name=CLAUDE_EXPIRES_AT::${Math.floor(Date.now() / 1000) + data.expires_in}`);
-    
+    console.log(
+      `::set-env name=CLAUDE_EXPIRES_AT::${Math.floor(Date.now() / 1000) + data.expires_in}`,
+    );
+
     console.log("OAuth tokens refreshed successfully");
   } catch (error) {
     console.error("Failed to refresh OAuth tokens:", error);
