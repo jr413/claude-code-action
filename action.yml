@@ -115,24 +115,71 @@ runs:
         OVERRIDE_GITHUB_TOKEN: ${{ inputs.github_token }}
         GITHUB_RUN_ID: ${{ github.run_id }}
 
+    - name: Setup Claude Code
+      if: steps.prepare.outputs.contains_trigger == 'true'
+      shell: bash
+      run: |
+        # Install Claude Code CLI
+        npm install -g @anthropic-ai/claude-code@latest
+        
+        # Create credentials file for OAuth
+        if [ "${{ inputs.use_oauth }}" == "true" ]; then
+          mkdir -p ~/.claude
+          cat > ~/.claude/.credentials.json << EOF
+        {
+          "claudeAiOauth": {
+            "accessToken": "${{ inputs.claude_access_token }}",
+            "refreshToken": "${{ inputs.claude_refresh_token }}",
+            "expiresAt": ${{ inputs.claude_expires_at }},
+            "scopes": ["user:inference", "user:profile"],
+            "subscriptionType": "max"
+          }
+        }
+        EOF
+        fi
+    
     - name: Run Claude Code
       id: claude-code
       if: steps.prepare.outputs.contains_trigger == 'true'
-      uses: Akira-Papa/claude-code-base-action@main
-      with:
-        prompt_file: /tmp/claude-prompts/claude-prompt.txt
-        allowed_tools: ${{ env.ALLOWED_TOOLS }}
-        disallowed_tools: ${{ env.DISALLOWED_TOOLS }}
-        timeout_minutes: ${{ inputs.timeout_minutes }}
-        model: ${{ inputs.model || inputs.anthropic_model }}
-        mcp_config: ${{ steps.prepare.outputs.mcp_config }}
-        use_bedrock: ${{ inputs.use_bedrock }}
-        use_vertex: ${{ inputs.use_vertex }}
-        use_oauth: ${{ inputs.use_oauth }}
-        anthropic_api_key: ${{ inputs.anthropic_api_key }}
-        claude_access_token: ${{ inputs.claude_access_token }}
-        claude_refresh_token: ${{ inputs.claude_refresh_token }}
-        claude_expires_at: ${{ inputs.claude_expires_at }}
+      shell: bash
+      run: |
+        # Set up environment
+        export PROMPT_FILE="/tmp/claude-prompts/claude-prompt.txt"
+        export OUTPUT_FILE="/tmp/claude-code-output.json"
+        
+        # Build Claude Code command
+        CLAUDE_CMD="claude"
+        
+        # Add model flag if specified
+        if [ -n "${{ inputs.model || inputs.anthropic_model }}" ]; then
+          CLAUDE_CMD="$CLAUDE_CMD --model ${{ inputs.model || inputs.anthropic_model }}"
+        fi
+        
+        # Add provider flags
+        if [ "${{ inputs.use_bedrock }}" == "true" ]; then
+          CLAUDE_CMD="$CLAUDE_CMD --provider bedrock"
+        elif [ "${{ inputs.use_vertex }}" == "true" ]; then
+          CLAUDE_CMD="$CLAUDE_CMD --provider vertex"
+        elif [ "${{ inputs.use_oauth }}" == "true" ]; then
+          CLAUDE_CMD="$CLAUDE_CMD --provider oauth"
+        fi
+        
+        # Add timeout
+        CLAUDE_CMD="$CLAUDE_CMD --timeout ${{ inputs.timeout_minutes }}m"
+        
+        # Run Claude Code with the prompt file
+        $CLAUDE_CMD < "$PROMPT_FILE" > "$OUTPUT_FILE" 2>&1
+        CLAUDE_EXIT_CODE=$?
+        
+        # Set outputs
+        echo "execution_file=$OUTPUT_FILE" >> $GITHUB_OUTPUT
+        if [ $CLAUDE_EXIT_CODE -eq 0 ]; then
+          echo "conclusion=success" >> $GITHUB_OUTPUT
+        else
+          echo "conclusion=failure" >> $GITHUB_OUTPUT
+        fi
+        
+        exit $CLAUDE_EXIT_CODE
       env:
         # Model configuration
         ANTHROPIC_MODEL: ${{ inputs.model || inputs.anthropic_model }}
