@@ -1,3 +1,14 @@
 node_modules
 
 **/.claude/settings.local.json
+
+# Exclude embedded repositories and test files
+haconiwa/
+test-multiroom-desks/
+my-company/
+backup-*/
+*.tar.gz
+state.pkl
+venv/
+*.pyc
+.DS_Store
