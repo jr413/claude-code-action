@@ -52,7 +52,7 @@ async function refreshTokens() {
       );
     }
 
-    const data: RefreshTokenResponse = await response.json();
+    const data = (await response.json()) as RefreshTokenResponse;
 
     // Set environment variables for the next step
     console.log(`::set-env name=CLAUDE_ACCESS_TOKEN::${data.access_token}`);
