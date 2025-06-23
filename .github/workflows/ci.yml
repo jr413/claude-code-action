@@ -11,6 +11,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Debug git config
+        run: |
+          git config --global user.email "test@example.com"
+          git config --global user.name "Test User"
+          git status
+
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.2.12
@@ -26,6 +32,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup git config
+        run: |
+          git config --global user.email "test@example.com"
+          git config --global user.name "Test User"
+
       - uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
@@ -40,6 +51,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup git config
+        run: |
+          git config --global user.email "test@example.com"
+          git config --global user.name "Test User"
 
       - uses: oven-sh/setup-bun@v2
         with:

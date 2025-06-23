@@ -1,2 +1,28 @@
 # Ignore files with complex YAML syntax
 .github/workflows/teleai-enterprise-automation.yml
+
+# Ignore test directories with potential yaml/config files
+test-multiroom-desks/
+haconiwa/
+my-company/
+backup-*/
+venv/
+
+# Ignore files that might contain mixed content
+*.yaml
+*.yml
+get-pip.py
+state.pkl
+*.tar.gz
+
+# Ignore specific problematic files
+haconiwa-multiroom-test.yaml
+rdd-config.yml
+test-oauth-system.ts
+
+# Standard ignores
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
