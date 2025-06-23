@@ -61,11 +61,11 @@ inputs:
     required: false
     default: ""
   claude_refresh_token:
-    description: "Claude AI OAuth refresh token (required when use_oauth is true)"
+    description: "Claude AI OAuth refresh token (optional for token refresh)"
     required: false
     default: ""
   claude_expires_at:
-    description: "Claude AI OAuth token expiration timestamp (required when use_oauth is true)"
+    description: "Claude AI OAuth token expiration timestamp"
     required: false
     default: ""
   claude_client_id:
@@ -101,21 +101,6 @@ runs:
         cd ${{ github.action_path }}
         bun install
 
-    - name: Refresh OAuth Tokens
-      id: oauth-refresh
-      if: inputs.use_oauth == 'true'
-      shell: bash
-      run: |
-        bun run ${{ github.action_path }}/src/entrypoints/oauth-refresh.ts
-      env:
-        USE_OAUTH: ${{ inputs.use_oauth }}
-        CLAUDE_ACCESS_TOKEN: ${{ inputs.claude_access_token }}
-        CLAUDE_REFRESH_TOKEN: ${{ inputs.claude_refresh_token }}
-        CLAUDE_EXPIRES_AT: ${{ inputs.claude_expires_at }}
-        CLAUDE_CLIENT_ID: ${{ inputs.claude_client_id }}
-        CLAUDE_CLIENT_SECRET: ${{ inputs.claude_client_secret }}
-        GITHUB_TOKEN: ${{ inputs.github_token || github.token }}
-
     - name: Prepare action
       id: prepare
       shell: bash
@@ -145,9 +130,9 @@ runs:
         use_vertex: ${{ inputs.use_vertex }}
         use_oauth: ${{ inputs.use_oauth }}
         anthropic_api_key: ${{ inputs.anthropic_api_key }}
-        claude_access_token: ${{ env.CLAUDE_ACCESS_TOKEN || inputs.claude_access_token }}
-        claude_refresh_token: ${{ env.CLAUDE_REFRESH_TOKEN || inputs.claude_refresh_token }}
-        claude_expires_at: ${{ env.CLAUDE_EXPIRES_AT || inputs.claude_expires_at }}
+        claude_access_token: ${{ inputs.claude_access_token }}
+        claude_refresh_token: ${{ inputs.claude_refresh_token }}
+        claude_expires_at: ${{ inputs.claude_expires_at }}
       env:
         # Model configuration
         ANTHROPIC_MODEL: ${{ inputs.model || inputs.anthropic_model }}
