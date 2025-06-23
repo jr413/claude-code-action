@@ -18,7 +18,7 @@ jobs:
           fetch-depth: 1
 
       - name: Auto review PR
-        uses: jr413/claude-code-action@beta # Fork with OAuth support
+        uses: jr413/claude-code-action@main # Updated to use main branch
         with:
           # Option 1: Use Anthropic API key (commented out for OAuth)
           # anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -37,4 +37,8 @@ jobs:
             - Overall architecture and design decisions
 
             Be constructive and specific in your feedback. Give inline comments where applicable.
-          allowed_tools: "mcp__github__add_pull_request_review_comment"
+          
+          # Enable review comments and basic bash commands
+          allowed_tools: "mcp__github__add_pull_request_review_comment,Bash(git diff),Bash(git status),Bash(npm test),Bash(npm run build)"
+          
+          timeout_minutes: "30"
