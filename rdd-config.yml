@@ -1,0 +1,59 @@
+rdd:
+  project:
+    name: "Sample RDD Project"
+    description: "要件定義駆動開発のサンプル"
+
+  phases:
+    requirements:
+      enabled: true
+      input_format: "markdown"
+      output_format: "yaml"
+      validation_rules:
+        - "acceptance_criteria_required"
+        - "priority_specified"
+        - "testable_requirements"
+
+    tests:
+      frameworks:
+        unit: "jest"
+        integration: "jest"
+        e2e: "cypress"
+      coverage_threshold: 85
+      test_types:
+        - "unit"
+        - "integration"
+        - "e2e"
+        - "performance"
+      naming_convention: "requirement_id.test.js"
+
+    implementation:
+      language: "typescript"
+      architecture: "clean_architecture"
+      patterns: ["repository", "service", "controller"]
+      quality_gates:
+        - "all_tests_pass"
+        - "coverage_threshold_met"
+        - "no_eslint_errors"
+
+  progress:
+    tracking:
+      method: "github_projects"
+      update_frequency: "on_commit"
+      metrics:
+        - "test_coverage"
+        - "requirement_coverage"
+        - "completion_percentage"
+
+    notifications:
+      slack_webhook: "${SLACK_WEBHOOK_URL}"
+      email: "dev@company.com"
+
+  quality:
+    code_review:
+      automated: true
+      rules: ["complexity", "duplication", "security"]
+    performance:
+      benchmarks: true
+      thresholds:
+        response_time: "200ms"
+        memory_usage: "100MB"

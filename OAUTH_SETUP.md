@@ -26,6 +26,7 @@ This implementation uses static OAuth tokens. When your token expires, you'll ne
 ### Error: "claude_access_token is required when use_oauth is true"
 
 This error occurs when:
+
 - CLAUDE_ACCESS_TOKEN secret is not set in your repository
 - The secret name is misspelled
 
@@ -44,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Run Claude Code
         uses: jr413/claude-code-action@main
         with:

@@ -1,0 +1,60 @@
+apiVersion: haconiwa.dev/v1
+kind: Space
+metadata:
+  name: my-company-space
+spec:
+  nations:
+    - id: jp
+      name: Japan
+      cities:
+        - id: tokyo
+          name: Tokyo
+          villages:
+            - id: dev-village
+              name: Development Village
+              companies:
+                - name: my-company
+                  grid: 4x4
+                  basePath: ./my-company-workspace
+                  organizations:
+                    - id: "01"
+                      name: "フロントエンド開発部"
+                      tasks:
+                        [
+                          "UI設計",
+                          "コンポーネント開発",
+                          "スタイリング",
+                          "テスト",
+                        ]
+                    - id: "02"
+                      name: "バックエンド開発部"
+                      tasks:
+                        ["API開発", "ビジネスロジック", "データ処理", "認証"]
+                    - id: "03"
+                      name: "データベース部門"
+                      tasks:
+                        [
+                          "スキーマ設計",
+                          "クエリ最適化",
+                          "マイグレーション",
+                          "バックアップ",
+                        ]
+                    - id: "04"
+                      name: "DevOps部門"
+                      tasks: ["インフラ構築", "CI/CD", "監視", "セキュリティ"]
+                  gitRepo:
+                    url: "https://github.com/your-org/your-repo"
+                    defaultBranch: "main"
+                    auth: "https"
+                  buildings:
+                    - id: headquarters
+                      name: 本社
+                      floors:
+                        - level: 1
+                          rooms:
+                            - id: room-01
+                              name: 開発ルーム
+                              description: "メイン開発環境"
+                            - id: room-02
+                              name: テストルーム
+                              description: "テストとQA環境"

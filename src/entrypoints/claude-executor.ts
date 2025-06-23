@@ -37,7 +37,7 @@ interface ClaudeResponse {
 async function executeClaudeWithOAuth(
   accessToken: string,
   request: ClaudeRequest,
-  oauthService?: OAuthApiService
+  oauthService?: OAuthApiService,
 ): Promise<ClaudeResponse> {
   // Enhanced OAuth implementation with token validation and refresh
   try {
@@ -45,7 +45,7 @@ async function executeClaudeWithOAuth(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         "anthropic-version": "2023-06-01",
         "User-Agent": "claude-code-action/1.0.0",
       },
@@ -54,18 +54,18 @@ async function executeClaudeWithOAuth(
 
     if (!response.ok) {
       const errorText = await response.text();
-      
+
       // Handle token expiration
       if (response.status === 401 && oauthService) {
         console.warn("OAuth token expired, attempting refresh...");
         // Token refresh logic would be handled by the calling function
         throw new Error(`OAuth token expired: ${response.status} ${errorText}`);
       }
-      
+
       throw new Error(`Claude API error: ${response.status} ${errorText}`);
     }
 
-    return await response.json() as ClaudeResponse;
+    return (await response.json()) as ClaudeResponse;
   } catch (error) {
     console.error("OAuth execution failed:", error);
     throw error;
@@ -74,7 +74,7 @@ async function executeClaudeWithOAuth(
 
 async function executeClaudeWithAPIKey(
   apiKey: string,
-  request: ClaudeRequest
+  request: ClaudeRequest,
 ): Promise<ClaudeResponse> {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -91,21 +91,22 @@ async function executeClaudeWithAPIKey(
     throw new Error(`Claude API error: ${response.status} ${errorText}`);
   }
 
-  return await response.json() as ClaudeResponse;
+  return (await response.json()) as ClaudeResponse;
 }
 
 async function run() {
   try {
     // Get inputs from environment variables
-    const promptFile = process.env.PROMPT_FILE || "/tmp/claude-prompts/claude-prompt.txt";
+    const promptFile =
+      process.env.PROMPT_FILE || "/tmp/claude-prompts/claude-prompt.txt";
     const useOAuth = process.env.USE_OAUTH === "true";
     const model = process.env.MODEL || "claude-3-5-sonnet-20241022";
     const maxTokens = parseInt(process.env.MAX_TOKENS || "4096");
-    
+
     // Initialize OAuth service and API key manager
     const apiKeyManager = new ApiKeyManager();
     const oauthService = new OAuthApiService(apiKeyManager);
-    
+
     // Read prompt from file
     if (!fs.existsSync(promptFile)) {
       throw new Error(`Prompt file not found: ${promptFile}`);
@@ -131,31 +132,57 @@ async function run() {
       const userId = process.env.GITHUB_ACTOR || "github-action-user";
       const apiKeyId = process.env.CLAUDE_API_KEY_ID;
       let accessToken = process.env.CLAUDE_ACCESS_TOKEN || "";
-      
+
       if (apiKeyId) {
         // Use managed API key
         console.log("Using managed OAuth API key...");
-        const managedToken = await oauthService.getValidApiKey("claude", userId, apiKeyId);
+        const managedToken = await oauthService.getValidApiKey(
+          "claude",
+          userId,
+          apiKeyId,
+        );
         if (managedToken) {
           accessToken = managedToken;
         } else {
           throw new Error("Managed API key not found or expired");
         }
       } else if (!accessToken) {
-        throw new Error("claude_access_token or claude_api_key_id is required when use_oauth is true");
+        throw new Error(
+          "claude_access_token or claude_api_key_id is required when use_oauth is true",
+        );
       }
 
       try {
-        response = await executeClaudeWithOAuth(accessToken, request, oauthService);
+        response = await executeClaudeWithOAuth(
+          accessToken,
+          request,
+          oauthService,
+        );
       } catch (error) {
-        if (error instanceof Error && error.message.includes("OAuth token expired") && apiKeyId) {
+        if (
+          error instanceof Error &&
+          error.message.includes("OAuth token expired") &&
+          apiKeyId
+        ) {
           // Attempt token refresh
           console.log("Attempting to refresh OAuth token...");
           try {
-            const refreshedApiKeyId = await oauthService.refreshAccessToken("claude", userId, `claude_refresh_${userId}`);
-            const refreshedToken = await oauthService.getValidApiKey("claude", userId, refreshedApiKeyId);
+            const refreshedApiKeyId = await oauthService.refreshAccessToken(
+              "claude",
+              userId,
+              `claude_refresh_${userId}`,
+            );
+            const refreshedToken = await oauthService.getValidApiKey(
+              "claude",
+              userId,
+              refreshedApiKeyId,
+            );
             if (refreshedToken) {
-              response = await executeClaudeWithOAuth(refreshedToken, request, oauthService);
+              response = await executeClaudeWithOAuth(
+                refreshedToken,
+                request,
+                oauthService,
+              );
             } else {
               throw new Error("Failed to obtain refreshed token");
             }
@@ -171,7 +198,9 @@ async function run() {
       // API key flow
       const apiKey = process.env.ANTHROPIC_API_KEY || "";
       if (!apiKey) {
-        throw new Error("anthropic_api_key is required when use_oauth is false");
+        throw new Error(
+          "anthropic_api_key is required when use_oauth is false",
+        );
       }
       response = await executeClaudeWithAPIKey(apiKey, request);
     }
@@ -186,27 +215,32 @@ async function run() {
     const executionReport = {
       type: "result",
       subtype: "success",
-      cost_usd: (response.usage.input_tokens * 0.003 + response.usage.output_tokens * 0.015) / 1000,
+      cost_usd:
+        (response.usage.input_tokens * 0.003 +
+          response.usage.output_tokens * 0.015) /
+        1000,
       is_error: false,
       duration_ms: Date.now() - startTime,
       num_turns: 1,
       result: responseText,
-      total_cost: (response.usage.input_tokens * 0.003 + response.usage.output_tokens * 0.015) / 1000,
+      total_cost:
+        (response.usage.input_tokens * 0.003 +
+          response.usage.output_tokens * 0.015) /
+        1000,
       session_id: randomUUID(),
     };
 
     // Save execution report
     const outputFile = `/tmp/claude-execution-${Date.now()}.json`;
     fs.writeFileSync(outputFile, JSON.stringify(executionReport, null, 2));
-    
+
     core.setOutput("execution_file", outputFile);
     core.setOutput("conclusion", "success");
     core.setOutput("response", responseText);
-
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     core.setFailed(`Claude execution failed: ${errorMessage}`);
-    
+
     // Create error report
     const errorReport = {
       type: "result",
@@ -219,10 +253,10 @@ async function run() {
       total_cost: 0,
       session_id: randomUUID(),
     };
-    
+
     const outputFile = `/tmp/claude-execution-error-${Date.now()}.json`;
     fs.writeFileSync(outputFile, JSON.stringify(errorReport, null, 2));
-    
+
     core.setOutput("execution_file", outputFile);
     core.setOutput("conclusion", "failure");
     process.exit(1);

@@ -41,8 +41,3 @@ jobs:
           claude_expires_at: ${{ secrets.CLAUDE_EXPIRES_AT }}
           claude_client_id: ${{ secrets.CLAUDE_CLIENT_ID }}
           claude_client_secret: ${{ secrets.CLAUDE_CLIENT_SECRET }}
-
-          # Enable Bash commands
-          allowed_tools: "Bash(ls),Bash(pwd),Bash(git status),Bash(git diff),Bash(npm install),Bash(npm test),Bash(npm run build),Bash(yarn),Bash(yarn test),Bash(yarn build),Bash(bun),Bash(bun test),Bash(bun run)"
-
-          timeout_minutes: "60"

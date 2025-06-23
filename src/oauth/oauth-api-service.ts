@@ -45,7 +45,7 @@ export class OAuthApiService {
         redirectUri: process.env.GITHUB_REDIRECT_URI || "",
         authorizationUrl: "https://github.com/login/oauth/authorize",
         tokenUrl: "https://github.com/login/oauth/access_token",
-        scope: ["read:user", "user:email"]
+        scope: ["read:user", "user:email"],
       },
       claude: {
         clientId: process.env.CLAUDE_CLIENT_ID || "",
@@ -53,8 +53,8 @@ export class OAuthApiService {
         redirectUri: process.env.CLAUDE_REDIRECT_URI || "",
         authorizationUrl: "https://claude.ai/oauth/authorize",
         tokenUrl: "https://claude.ai/oauth/token",
-        scope: ["api:read", "api:write"]
-      }
+        scope: ["api:read", "api:write"],
+      },
     };
   }
 
@@ -72,7 +72,7 @@ export class OAuthApiService {
       redirect_uri: config.redirectUri,
       scope: config.scope.join(" "),
       response_type: "code",
-      state: state || crypto.randomBytes(16).toString("hex")
+      state: state || crypto.randomBytes(16).toString("hex"),
     });
 
     return `${config.authorizationUrl}?${params.toString()}`;
@@ -84,7 +84,7 @@ export class OAuthApiService {
   async exchangeCodeForToken(
     provider: string,
     code: string,
-    _state: string
+    _state: string,
   ): Promise<OAuthTokenResponse> {
     const config = this.oauthConfigs[provider];
     if (!config) {
@@ -96,24 +96,26 @@ export class OAuthApiService {
       client_secret: config.clientSecret,
       code,
       redirect_uri: config.redirectUri,
-      grant_type: "authorization_code"
+      grant_type: "authorization_code",
     });
 
     const response = await fetch(config.tokenUrl, {
       method: "POST",
       headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/x-www-form-urlencoded"
+        Accept: "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: params.toString()
+      body: params.toString(),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`OAuth token exchange failed: ${response.status} ${errorText}`);
+      throw new Error(
+        `OAuth token exchange failed: ${response.status} ${errorText}`,
+      );
     }
 
-    return await response.json() as OAuthTokenResponse;
+    return (await response.json()) as OAuthTokenResponse;
   }
 
   /**
@@ -133,21 +135,21 @@ export class OAuthApiService {
   private async getGitHubUserInfo(accessToken: string): Promise<UserInfo> {
     const response = await fetch("https://api.github.com/user", {
       headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Accept": "application/vnd.github.v3+json"
-      }
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/vnd.github.v3+json",
+      },
     });
 
     if (!response.ok) {
       throw new Error(`Failed to get GitHub user info: ${response.status}`);
     }
 
-    const userData = await response.json() as any;
+    const userData = (await response.json()) as any;
     return {
       id: userData.id.toString(),
       email: userData.email,
       name: userData.name || userData.login,
-      provider: "github"
+      provider: "github",
     };
   }
 
@@ -155,21 +157,21 @@ export class OAuthApiService {
     // Note: This is experimental - actual Claude.ai user endpoint may differ
     const response = await fetch("https://claude.ai/api/user", {
       headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Accept": "application/json"
-      }
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+      },
     });
 
     if (!response.ok) {
       throw new Error(`Failed to get Claude user info: ${response.status}`);
     }
 
-    const userData = await response.json() as any;
+    const userData = (await response.json()) as any;
     return {
       id: userData?.id || userData?.user_id || "unknown",
       email: userData?.email,
       name: userData?.name,
-      provider: "claude"
+      provider: "claude",
     };
   }
 
@@ -179,18 +181,25 @@ export class OAuthApiService {
   async completeOAuthFlow(
     provider: string,
     code: string,
-    state: string
+    state: string,
   ): Promise<{
     apiKeyId: string;
     userInfo: UserInfo;
     expiresAt: number;
   }> {
     // Exchange code for token
-    const tokenResponse = await this.exchangeCodeForToken(provider, code, state);
-    
+    const tokenResponse = await this.exchangeCodeForToken(
+      provider,
+      code,
+      state,
+    );
+
     // Get user information
-    const userInfo = await this.getUserInfo(provider, tokenResponse.access_token);
-    
+    const userInfo = await this.getUserInfo(
+      provider,
+      tokenResponse.access_token,
+    );
+
     // Store the access token as an API key
     const expiresInHours = Math.floor(tokenResponse.expires_in / 3600) || 24;
     const apiKeyId = await this.apiKeyManager.storeApiKey(
@@ -198,7 +207,7 @@ export class OAuthApiService {
       provider,
       tokenResponse.access_token,
       this.oauthConfigs[provider]?.scope || [],
-      expiresInHours
+      expiresInHours,
     );
 
     // If refresh token is available, store it separately
@@ -208,14 +217,14 @@ export class OAuthApiService {
         `${provider}_refresh`,
         tokenResponse.refresh_token,
         ["refresh"],
-        24 * 30 // 30 days for refresh token
+        24 * 30, // 30 days for refresh token
       );
     }
 
     return {
       apiKeyId,
       userInfo,
-      expiresAt: Date.now() + (expiresInHours * 60 * 60 * 1000)
+      expiresAt: Date.now() + expiresInHours * 60 * 60 * 1000,
     };
   }
 
@@ -225,14 +234,17 @@ export class OAuthApiService {
   async refreshAccessToken(
     provider: string,
     userId: string,
-    refreshTokenId: string
+    refreshTokenId: string,
   ): Promise<string> {
     const config = this.oauthConfigs[provider];
     if (!config) {
       throw new Error(`Unsupported OAuth provider: ${provider}`);
     }
 
-    const refreshToken = await this.apiKeyManager.getApiKey(refreshTokenId, userId);
+    const refreshToken = await this.apiKeyManager.getApiKey(
+      refreshTokenId,
+      userId,
+    );
     if (!refreshToken) {
       throw new Error("Refresh token not found or expired");
     }
@@ -241,16 +253,16 @@ export class OAuthApiService {
       client_id: config.clientId,
       client_secret: config.clientSecret,
       refresh_token: refreshToken,
-      grant_type: "refresh_token"
+      grant_type: "refresh_token",
     });
 
     const response = await fetch(config.tokenUrl, {
       method: "POST",
       headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/x-www-form-urlencoded"
+        Accept: "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: params.toString()
+      body: params.toString(),
     });
 
     if (!response.ok) {
@@ -258,8 +270,8 @@ export class OAuthApiService {
       throw new Error(`Token refresh failed: ${response.status} ${errorText}`);
     }
 
-    const tokenResponse = await response.json() as OAuthTokenResponse;
-    
+    const tokenResponse = (await response.json()) as OAuthTokenResponse;
+
     // Store new access token
     const expiresInHours = Math.floor(tokenResponse.expires_in / 3600) || 24;
     const newApiKeyId = await this.apiKeyManager.storeApiKey(
@@ -267,7 +279,7 @@ export class OAuthApiService {
       provider,
       tokenResponse.access_token,
       config.scope,
-      expiresInHours
+      expiresInHours,
     );
 
     return newApiKeyId;
@@ -279,7 +291,7 @@ export class OAuthApiService {
   async getValidApiKey(
     provider: string,
     userId: string,
-    apiKeyId: string
+    apiKeyId: string,
   ): Promise<string | null> {
     try {
       return await this.apiKeyManager.getApiKey(apiKeyId, userId);
@@ -288,7 +300,11 @@ export class OAuthApiService {
         // Try to refresh the token if possible
         const refreshTokenId = `${provider}_refresh_${userId}`;
         try {
-          const newApiKeyId = await this.refreshAccessToken(provider, userId, refreshTokenId);
+          const newApiKeyId = await this.refreshAccessToken(
+            provider,
+            userId,
+            refreshTokenId,
+          );
           return await this.apiKeyManager.getApiKey(newApiKeyId, userId);
         } catch (refreshError) {
           console.error("Failed to refresh token:", refreshError);
@@ -305,15 +321,15 @@ export class OAuthApiService {
   async revokeApiKey(
     provider: string,
     userId: string,
-    apiKeyId: string
+    apiKeyId: string,
   ): Promise<boolean> {
     // Delete the API key from storage
     const deleted = await this.apiKeyManager.deleteApiKey(apiKeyId, userId);
-    
+
     // Also try to delete associated refresh token
     const refreshTokenId = `${provider}_refresh_${userId}`;
     await this.apiKeyManager.deleteApiKey(refreshTokenId, userId);
-    
+
     return deleted;
   }
 
