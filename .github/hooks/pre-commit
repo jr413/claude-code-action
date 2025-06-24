@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# Pre-commit hook to prevent common mistakes
+
+echo "🔍 Running pre-commit checks..."
+
+# 1. Prettier check
+echo "📝 Checking code formatting..."
+if ! bun run format:check > /dev/null 2>&1; then
+    echo "❌ Prettier check failed!"
+    echo "   Run 'bun run format' to fix formatting issues"
+    exit 1
+fi
+
+# 2. TypeScript check
+echo "🔧 Checking TypeScript types..."
+if ! bun run typecheck > /dev/null 2>&1; then
+    echo "❌ TypeScript check failed!"
+    echo "   Fix type errors before committing"
+    exit 1
+fi
+
+# 3. Check for common problematic files
+echo "🗑️  Checking for unwanted files..."
+UNWANTED_PATTERNS=(
+    "test-multiroom-desks/"
+    "haconiwa/"
+    "backup-*"
+    "*.tar.gz"
+    "state.pkl"
+    "venv/"
+    "*.pyc"
+    "__pycache__/"
+    "node_modules/"
+    ".DS_Store"
+)
+
+for pattern in "${UNWANTED_PATTERNS[@]}"; do
+    if git diff --cached --name-only | grep -q "$pattern"; then
+        echo "❌ Found unwanted file matching pattern: $pattern"
+        echo "   Remove it from staging or add to .gitignore"
+        exit 1
+    fi
+done
+
+# 4. Check for unauthorized package.json changes
+if git diff --cached --name-only | grep -q "package.json"; then
+    echo "⚠️  package.json was modified"
+    echo "   Did you get permission to add new dependencies?"
+    read -p "   Type 'yes' if authorized: " response
+    if [ "$response" != "yes" ]; then
+        echo "❌ Commit cancelled. Get permission before adding dependencies."
+        exit 1
+    fi
+fi
+
+echo "✅ All pre-commit checks passed!"

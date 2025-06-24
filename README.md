@@ -21,6 +21,24 @@ A general-purpose [Claude Code](https://claude.ai/code) action for GitHub PRs an
 - 📋 **Progress Tracking**: Visual progress indicators with checkboxes that dynamically update as Claude completes tasks
 - 🏃 **Runs on Your Infrastructure**: The action executes entirely on your own GitHub runner (Anthropic API calls go to your chosen provider)
 
+## Initial Setup
+
+### Install Git Hooks (REQUIRED)
+
+Before contributing to this project, install git hooks to prevent common mistakes:
+
+```bash
+bun install
+bun run install-hooks
+```
+
+This installs pre-commit hooks that automatically check:
+
+- ✅ Code formatting (Prettier)
+- ✅ TypeScript types
+- ✅ Unwanted files
+- ✅ Unauthorized dependencies
+
 ## Quickstart
 
 The easiest way to set up this action is through [Claude Code](https://claude.ai/code) in the terminal. Just open `claude` and run `/install-github-app`.

@@ -1,0 +1,126 @@
+# 詰め集.yml - ユーザーフィードバック記録
+
+feedback:
+  - date: "2025-06-24"
+    user: "naoki"
+    issue: "GitHub Actions で Akira-Papa の古い依存関係を使用していた"
+    solution: "外部アクションへの依存を削除し、直接 npm install -g @anthropic-ai/claude-code@latest を使用"
+    lesson: "外部依存は最小限にし、可能な限り直接インストールする"
+
+  - date: "2025-06-24"
+    user: "naoki"
+    issue: "CI で git exit code 128 エラーが発生"
+    solution: "git 操作を完全に無効化し、GitHub API のみを使用するように変更"
+    lesson: "CI 環境では git コマンドに依存しない設計にする"
+
+  - date: "2025-06-24"
+    user: "naoki"
+    issue: "不要なテストファイルや embedded git repositories が含まれていた"
+    solution: "test-multiroom-desks/, haconiwa/, backup-* などを削除し .gitignore に追加"
+    lesson: "作業後は必ず不要なファイルをクリーンアップする"
+
+  - date: "2025-06-24"
+    user: "naoki"
+    issue: "prettier が YAML ファイル内の JavaScript コードでエラー"
+    solution: ".prettierignore に問題のあるファイルパターンを追加"
+    lesson: "混合コンテンツファイルは適切に除外設定する"
+    
+  - date: "2025-06-24"
+    user: "naoki"
+    issue: "githubにプッシュするとき、prettierエラーみたいなやつ多い"
+    solution: "Git pre-commit hooks を実装し、コミット前に自動チェックする仕組みを構築"
+    lesson: "手動チェックに頼らず、自動化で人為的ミスを防ぐ"
+    
+  - date: "2025-06-24"
+    user: "naoki"
+    issue: "同じミスを繰り返さない仕組みを作って！"
+    solution: "3層防御システム（Git Hooks + 詰め集.yml + CLAUDE.md）を構築"
+    lesson: "ミスは記録し、自動化し、ルール化することで再発を防ぐ"
+    
+  - date: "2025-06-24"
+    user: "naoki"
+    issue: "ユーザーからの指摘は詰め集.ymlに記録するように"
+    solution: "CLAUDE.md に詰め集.yml への記録ルールを明記し、作業前の確認を必須化"
+    lesson: "フィードバックループを確立し、継続的改善を実現する"
+    
+  - date: "2025-06-24"
+    user: "naoki"
+    issue: "明らかに簡単な変更はいちいち確認しないで"
+    solution: "簡単な変更（typo修正、明確なバグ修正、ドキュメント更新など）は確認なしで実行"
+    lesson: "作業の規模と重要度を判断し、適切なレベルの確認を行う"
+    
+  - date: "2025-06-24"
+    user: "naoki"
+    issue: "できてないのに、できましたって言って誤魔化さないで"
+    solution: "実際の実行結果を確認し、エラーや未完了があれば正直に報告する"
+    lesson: "透明性を保ち、問題があれば隠さずに報告する"
+    
+  - date: "2025-06-24"
+    user: "naoki"
+    issue: "私が手を加えた方がコスト・時間的に明らかに容易な場合は、その提案をして"
+    solution: "複雑な作業や権限が必要な作業は、ユーザーが行うべき具体的な手順を提案"
+    lesson: "AIの限界を認識し、効率的な分業を提案する"
+
+rules_to_remember:
+  file_creation:
+    - "新規ファイル作成前に必ず既存ファイルを確認"
+    - "一時ファイルは作業後すぐに削除"
+    - "ファイル作成の必要性を説明してから作成"
+
+  dependencies:
+    - "npm パッケージ追加前に必ずユーザーの許可を得る"
+    - "既存ライブラリで実現可能か先に検討"
+    - "依存関係は最小限に保つ"
+
+  code_quality:
+    - "既存コードの修正を優先、新規作成は最小限に"
+    - "コメントは要求された場合のみ追加"
+    - "既存のコーディング規約に従う"
+
+  git_operations:
+    - "CI 環境では git コマンドを使わない"
+    - "GitHub API を優先的に使用"
+    - "git 操作が必要な場合はモック化を検討"
+
+common_mistakes:
+  - mistake: "許可なく新しい npm パッケージを追加"
+    prevention: "package.json 変更前に必ず確認"
+    
+  - mistake: "不要なテストファイルを残す"
+    prevention: "作業完了時に git status で確認"
+    
+  - mistake: "外部アクションに過度に依存"
+    prevention: "直接実装できないか検討"
+    
+  - mistake: "Prettier エラーでCIが失敗"
+    prevention: |
+      - コミット前に必ず `bun run format:check` または `npx prettier --check .` を実行
+      - エラーが出たら `bun run format` または `npx prettier --write .` で修正
+      - 問題のあるファイルは .prettierignore に追加を検討
+
+best_practices:
+  - "段階的デバッグ：問題を一つずつ解決"
+  - "環境検出を活用：process.env.CI, process.env.GITHUB_ACTIONS"
+  - "エラーメッセージを正確に記録・分析"
+  - "変更は最小限に、影響範囲を限定"
+
+pre_push_checklist:
+  - name: "Prettier チェック"
+    command: "bun run format:check"
+    fix: "bun run format"
+    note: "必ずコミット前に実行。CIでの失敗を防ぐ"
+    
+  - name: "TypeScript 型チェック"
+    command: "bun run typecheck"
+    fix: "型エラーを修正"
+    note: "未使用インポートや型エラーをチェック"
+    
+  - name: "テスト実行"
+    command: "bun test"
+    fix: "失敗したテストを修正"
+    note: "CI環境を想定してテスト"
+    
+  - name: "不要ファイル確認"
+    command: "git status"
+    fix: "不要なファイルを削除または.gitignoreに追加"
+    note: "テストファイル、一時ファイル、大容量ファイルに注意"
