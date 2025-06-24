@@ -59,16 +59,27 @@ src/
 
 ## User Feedback and Quality Control
 
-### MANDATORY: Check 詰め集.yml FIRST
+### 🚨 MANDATORY: Check 詰め集.yml FIRST 🚨
 
 **⚠️ CRITICAL RULE: Before starting ANY work, you MUST read the entire `詰め集.yml` file from top to bottom.**
 
-This is not optional. You must:
+**❌ VIOLATION = IMMEDIATE STOP**
 
-1. Open and read `詰め集.yml` completely
-2. Review all past mistakes and lessons learned
-3. Check all rules and best practices
-4. Only then proceed with the task
+This is NOT optional. You MUST:
+
+1. ✅ Open and read `詰め集.yml` completely
+2. ✅ Review ALL past mistakes and lessons learned  
+3. ✅ Check ALL rules and best practices
+4. ✅ Confirm you understand each lesson
+5. ✅ ONLY THEN proceed with the task
+
+**If you start work without reading 詰め集.yml:**
+- ❌ You WILL repeat past mistakes
+- ❌ You WILL violate established rules
+- ❌ You WILL waste user's time
+- ❌ You WILL be reminded to read it
+
+**PROVE you read it by mentioning at least one lesson from 詰め集.yml in your response.**
 
 ### Recording User Feedback
 
