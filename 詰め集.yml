@@ -84,6 +84,12 @@ feedback:
     issue: "隣はまだ読んでない気がする。しっかりCLAUDE.mdとかにルール作っといて。詰め集を必ず確認すること"
     solution: "CLAUDE.md の詰め集.yml 確認ルールをさらに強化し、絶対的な必須事項として明記"
     lesson: "ルールは一度作るだけでなく、繰り返し強化して徹底させる必要がある"
+    
+  - date: "2025-06-24"
+    user: "naoki"
+    issue: "そもそもあなたはちゃんと読んでる？無駄なファイル増やしてない？"
+    solution: "不要ファイル5個を削除し、情報を詰め集.yml に統合。file_creation ルール違反を反省"
+    lesson: "自分自身もルールを守り、不要なファイル作成は避けるべき"
 
 rules_to_remember:
   file_creation:
