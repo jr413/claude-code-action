@@ -66,6 +66,24 @@ feedback:
     issue: "隣のターミナルが詰め集.yml読まずに動いてたよ！ちゃんと教育しといて"
     solution: "詰め集.yml の重要性をより強調し、違反時の警告システムを検討"
     lesson: "ルールは作るだけでなく、遵守されているかチェックする仕組みも必要"
+    
+  - date: "2025-06-24"
+    user: "naoki"
+    issue: "OAuth認証でエラー起きがちだから気を付けて"
+    solution: "OAuth トークンの検証、有効期限チェック、エラーハンドリングを強化"
+    lesson: "OAuth は複雑で壊れやすいので、特に慎重な扱いが必要"
+    
+  - date: "2025-06-24"
+    user: "naoki"
+    issue: "次回以降に役立つ解決方法は記録に残しておこう"
+    solution: "解決方法、手順、コマンドを詰め集.yml に詳細記録し、再利用可能にする"
+    lesson: "一度解決した問題は必ず記録し、次回の効率化を図る"
+    
+  - date: "2025-06-24"
+    user: "naoki"
+    issue: "隣はまだ読んでない気がする。しっかりCLAUDE.mdとかにルール作っといて。詰め集を必ず確認すること"
+    solution: "CLAUDE.md の詰め集.yml 確認ルールをさらに強化し、絶対的な必須事項として明記"
+    lesson: "ルールは一度作るだけでなく、繰り返し強化して徹底させる必要がある"
 
 rules_to_remember:
   file_creation:
@@ -87,6 +105,13 @@ rules_to_remember:
     - "CI 環境では git コマンドを使わない"
     - "GitHub API を優先的に使用"
     - "git 操作が必要な場合はモック化を検討"
+    
+  oauth_handling:
+    - "OAuth トークンは頻繁に期限切れする"
+    - "トークン検証を作業開始時に必ず実行"
+    - "エラー時は詳細なログを出力"
+    - "refresh token を使った自動更新を検討"
+    - "OAuth 関連の変更は慎重に行う"
 
 common_mistakes:
   - mistake: "許可なく新しい npm パッケージを追加"
@@ -103,12 +128,21 @@ common_mistakes:
       - コミット前に必ず `bun run format:check` または `npx prettier --check .` を実行
       - エラーが出たら `bun run format` または `npx prettier --write .` で修正
       - 問題のあるファイルは .prettierignore に追加を検討
+      
+  - mistake: "OAuth 認証エラーで GitHub Actions が失敗"
+    prevention: |
+      - OAuth トークンの有効期限を事前に確認（~/.claude/.credentials.json の expiresAt）
+      - アクセストークンが期限切れの場合は refresh token で更新
+      - エラー時は認証情報の再設定を提案
+      - OAuth 関連の変更は段階的にテスト
 
 best_practices:
   - "段階的デバッグ：問題を一つずつ解決"
   - "環境検出を活用：process.env.CI, process.env.GITHUB_ACTIONS"
   - "エラーメッセージを正確に記録・分析"
   - "変更は最小限に、影響範囲を限定"
+  - "解決した問題は詳細な手順と共に詰め集.yml に記録"
+  - "再利用可能な解決方法を蓄積し、効率化を図る"
 
 pre_push_checklist:
   - name: "Prettier チェック"
@@ -130,3 +164,72 @@ pre_push_checklist:
     command: "git status"
     fix: "不要なファイルを削除または.gitignoreに追加"
     note: "テストファイル、一時ファイル、大容量ファイルに注意"
+    
+  - name: "OAuth トークン有効性確認"
+    command: "cat ~/.claude/.credentials.json | jq .claudeAiOauth.expiresAt"
+    fix: "期限切れの場合は refresh token で更新、または再認証"
+    note: "OAuth エラーの主な原因。expiresAt が現在時刻より大きいか確認"
+
+# 再利用可能な解決方法ライブラリ
+solution_library:
+  claude_code_version_update:
+    problem: "Claude Code バージョンが古くて GitHub Actions が失敗"
+    symptoms:
+      - "It looks like your version of Claude Code (1.0.2) needs an update"
+      - "A newer version (1.0.24 or higher) is required"
+    solution_steps:
+      1: "外部アクション依存を削除"
+      2: "action.yml で直接インストール: npm install -g @anthropic-ai/claude-code@latest"
+      3: "OAuth 認証情報を ~/.claude/.credentials.json で管理"
+    commands:
+      - "npm install -g @anthropic-ai/claude-code@latest"
+    time_to_fix: "30分"
+    prevention: "外部依存は最小限に、直接インストールを優先"
+
+  git_exit_code_128:
+    problem: "CI で git コマンドが exit code 128 で失敗"
+    symptoms:
+      - "The process '/usr/bin/git' failed with exit code 128"
+      - "git fetch, git checkout でエラー"
+    solution_steps:
+      1: "git 操作を完全に無効化"
+      2: "execSync, Bun $ を削除"
+      3: "GitHub API のみを使用"
+      4: "モック関数でログ出力のみ"
+    commands:
+      - "git config --global user.email 'test@example.com'"
+      - "git config --global user.name 'Test User'"
+    time_to_fix: "1時間"
+    prevention: "CI 環境では git コマンドに依存しない設計"
+
+  prettier_format_errors:
+    problem: "Prettier フォーマットエラーで CI が失敗"
+    symptoms:
+      - "Code style issues found in X files"
+      - "Process completed with exit code 1"
+    solution_steps:
+      1: "bun run format でフォーマット修正"
+      2: "問題ファイルを .prettierignore に追加"
+      3: "Git hooks で自動チェック設定"
+    commands:
+      - "bun run format:check"
+      - "bun run format"
+      - "bun run install-hooks"
+    time_to_fix: "15分"
+    prevention: "コミット前に必ず format:check を実行"
+
+  oauth_authentication_errors:
+    problem: "OAuth 認証エラーで GitHub Actions が失敗"
+    symptoms:
+      - "Authentication failed"
+      - "Invalid access token"
+      - "Token expired"
+    solution_steps:
+      1: "~/.claude/.credentials.json の expiresAt 確認"
+      2: "期限切れなら refresh token で更新"
+      3: "必要に応じて再認証"
+    commands:
+      - "cat ~/.claude/.credentials.json | jq .claudeAiOauth.expiresAt"
+      - "date +%s # 現在のタイムスタンプと比較"
+    time_to_fix: "10分"
+    prevention: "作業開始時に OAuth トークン有効性を必ずチェック"

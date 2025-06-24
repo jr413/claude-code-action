@@ -59,27 +59,56 @@ src/
 
 ## User Feedback and Quality Control
 
-### 🚨 MANDATORY: Check 詰め集.yml FIRST 🚨
+### 🚨🚨🚨 ABSOLUTE MANDATORY: 詰め集.yml を必ず確認 🚨🚨🚨
 
-**⚠️ CRITICAL RULE: Before starting ANY work, you MUST read the entire `詰め集.yml` file from top to bottom.**
+# ⛔ STOP! READ THIS IMMEDIATELY ⛔
 
-**❌ VIOLATION = IMMEDIATE STOP**
+**🔥 CRITICAL EMERGENCY RULE: あらゆる作業開始前に、必ず詰め集.yml を上から下まで全部読む 🔥**
 
-This is NOT optional. You MUST:
+## 🚫 詰め集.yml を読まない = 作業禁止 🚫
 
-1. ✅ Open and read `詰め集.yml` completely
-2. ✅ Review ALL past mistakes and lessons learned  
-3. ✅ Check ALL rules and best practices
-4. ✅ Confirm you understand each lesson
-5. ✅ ONLY THEN proceed with the task
+### ❌ 絶対に許可されない行動
+- 詰め集.yml を読まずに作業開始
+- 一部だけ読んで済ます
+- 「読んだことにする」
+- 過去の教訓を無視
 
-**If you start work without reading 詰め集.yml:**
-- ❌ You WILL repeat past mistakes
-- ❌ You WILL violate established rules
-- ❌ You WILL waste user's time
-- ❌ You WILL be reminded to read it
+### ✅ 必須作業手順（例外なし）
+```
+STEP 1: 詰め集.yml を開く
+STEP 2: feedback セクションを全て読む
+STEP 3: rules_to_remember を全て確認
+STEP 4: common_mistakes を全て確認
+STEP 5: solution_library を確認
+STEP 6: 理解した教訓を1つ以上言及
+STEP 7: ようやく作業開始
+```
 
-**PROVE you read it by mentioning at least one lesson from 詰め集.yml in your response.**
+### 🔥 証明必須！
+**あなたが詰め集.yml を読んだ証拠として、以下のいずれかを必ず言及せよ：**
+- feedback セクションの具体的な教訓
+- common_mistakes の具体例
+- solution_library の解決方法
+- oauth_handling ルール
+- pre_push_checklist の項目
+
+### ⚡ 違反時の即座処罰
+詰め集.yml を読まずに作業した場合：
+1. 🛑 **即座に作業停止**
+2. 🔄 **最初からやり直し**
+3. 📝 **違反記録を詰め集.yml に追加**
+4. ⚠️ **ユーザーに報告**
+
+## 🎯 隣のターミナルへの緊急通告
+
+**もしあなたが詰め集.yml を読まずにこのメッセージを見ているなら：**
+
+1. 🚨 **今すぐ全ての作業を停止せよ**
+2. 📖 **詰め集.yml を最初から最後まで読め**
+3. 📝 **読んだ証拠を次の回答で示せ**
+4. 🔄 **読了後に作業を再開せよ**
+
+**これは提案ではない。命令である。**
 
 ### Recording User Feedback
 
@@ -176,11 +205,23 @@ Remember: When in doubt, ASK before creating or adding anything!
 **EVERY TIME before starting work, you MUST:**
 
 ```
-1. ✓ Read 詰め集.yml from TOP to BOTTOM
-2. ✓ Review ALL feedback entries
-3. ✓ Check ALL rules_to_remember
-4. ✓ Review ALL common_mistakes
-5. ✓ Confirm ALL best_practices
+1. ✓ Read 詰め集.yml from TOP to BOTTOM (MANDATORY)
+2. ✓ Review ALL feedback entries (MANDATORY)
+3. ✓ Check ALL rules_to_remember (MANDATORY)
+4. ✓ Review ALL common_mistakes (MANDATORY)
+5. ✓ Check solution_library for known solutions (MANDATORY)
+6. ✓ Mention specific lesson from 詰め集.yml in response (PROOF REQUIRED)
 ```
 
-**This is NOT optional. Failure to check 詰め集.yml = Repeating past mistakes**
+**🚨 ZERO TOLERANCE POLICY:**
+- Failure to check 詰め集.yml = IMMEDIATE WORK STOPPAGE
+- No exceptions, no excuses, no "I forgot"
+- Violation will be recorded in 詰め集.yml
+- User will be notified of non-compliance
+
+**🔍 COMPLIANCE CHECK:**
+Every response must include evidence you read 詰め集.yml by mentioning:
+- A specific lesson from feedback section, OR
+- A rule from rules_to_remember, OR  
+- A mistake from common_mistakes, OR
+- A solution from solution_library
