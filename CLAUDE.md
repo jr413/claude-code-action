@@ -68,12 +68,14 @@ src/
 ## 🚫 詰め集.yml を読まない = 作業禁止 🚫
 
 ### ❌ 絶対に許可されない行動
+
 - 詰め集.yml を読まずに作業開始
 - 一部だけ読んで済ます
 - 「読んだことにする」
 - 過去の教訓を無視
 
 ### ✅ 必須作業手順（例外なし）
+
 ```
 STEP 1: 詰め集.yml を開く
 STEP 2: feedback セクションを全て読む
@@ -85,7 +87,9 @@ STEP 7: ようやく作業開始
 ```
 
 ### 🔥 証明必須！
+
 **あなたが詰め集.yml を読んだ証拠として、以下のいずれかを必ず言及せよ：**
+
 - feedback セクションの具体的な教訓
 - common_mistakes の具体例
 - solution_library の解決方法
@@ -93,7 +97,9 @@ STEP 7: ようやく作業開始
 - pre_push_checklist の項目
 
 ### ⚡ 違反時の即座処罰
+
 詰め集.yml を読まずに作業した場合：
+
 1. 🛑 **即座に作業停止**
 2. 🔄 **最初からやり直し**
 3. 📝 **違反記録を詰め集.yml に追加**
@@ -214,6 +220,7 @@ Remember: When in doubt, ASK before creating or adding anything!
 ```
 
 **🚨 ZERO TOLERANCE POLICY:**
+
 - Failure to check 詰め集.yml = IMMEDIATE WORK STOPPAGE
 - No exceptions, no excuses, no "I forgot"
 - Violation will be recorded in 詰め集.yml
@@ -221,7 +228,8 @@ Remember: When in doubt, ASK before creating or adding anything!
 
 **🔍 COMPLIANCE CHECK:**
 Every response must include evidence you read 詰め集.yml by mentioning:
+
 - A specific lesson from feedback section, OR
-- A rule from rules_to_remember, OR  
+- A rule from rules_to_remember, OR
 - A mistake from common_mistakes, OR
 - A solution from solution_library
