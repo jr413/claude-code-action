@@ -180,22 +180,75 @@ runs:
         echo "✅ プロンプトファイル確認完了: $PROMPT_FILE"
         echo "プロンプトファイルサイズ: $(wc -c < "$PROMPT_FILE") bytes"
         
-        # OAuth tokens cannot be used with Anthropic API directly
+        # Implement Claude Web UI OAuth proxy (詰め集.yml lesson: OAuth は複雑で壊れやすいので慎重に)
         if [ "${{ inputs.use_oauth }}" == "true" ]; then
-          echo "❌ 重要な問題が判明しました"
-          echo "Anthropic APIは直接のOAuth認証をサポートしていません"
-          echo "OAuthトークンはClaude Web UIでのみ使用可能です"
-          echo ""
-          echo "解決策:"
-          echo "1. Anthropic API Keyを使用（use_oauth: false）"
-          echo "2. anthropic_api_key入力パラメータにAPI Keyを設定"
-          echo "3. Claude Max subscriberの場合、無料API枠があるかAnthropic公式を確認"
-          echo ""
+          echo "Claude Web UI OAuth プロキシを実装中..."
+          echo "OAuthトークンを使用してClaude Web UI API経由でアクセスします"
           
-          # Create error output
-          echo '{"error": "OAuth authentication not supported by Anthropic API. Please use API Key instead.", "status": "failed", "solution": "Set use_oauth: false and provide anthropic_api_key", "documentation": "https://docs.anthropic.com/en/api/getting-started"}' > "$OUTPUT_FILE"
+          # Read prompt content
+          PROMPT_CONTENT=$(cat "$PROMPT_FILE")
           
-          CLAUDE_EXIT_CODE=1
+          # Create Claude Web UI conversation request
+          echo "Claude Web UI API呼び出し中..."
+          
+          # Step 1: Create conversation
+          CONV_RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST "https://claude.ai/api/organizations/$(echo '${{ env.CLAUDE_ACCESS_TOKEN || inputs.claude_access_token }}' | cut -d'.' -f2 | base64 -d 2>/dev/null | jq -r .org_id // \"\")/chat_conversations" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ env.CLAUDE_ACCESS_TOKEN || inputs.claude_access_token }}" \
+            -H "anthropic-version: 2023-06-01" \
+            --data-raw "{
+              \"name\": \"GitHub Action Request\",
+              \"model\": \"$ANTHROPIC_MODEL\"
+            }")
+          
+          CONV_CODE=$(echo "$CONV_RESPONSE" | tail -n1)
+          CONV_BODY=$(echo "$CONV_RESPONSE" | head -n -1)
+          
+          if [ "$CONV_CODE" = "200" ] || [ "$CONV_CODE" = "201" ]; then
+            CONVERSATION_ID=$(echo "$CONV_BODY" | jq -r .uuid)
+            echo "✅ 会話作成成功: $CONVERSATION_ID"
+            
+            # Step 2: Send message
+            MSG_RESPONSE=$(curl -s -w "\n%{http_code}" \
+              -X POST "https://claude.ai/api/append_message" \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer ${{ env.CLAUDE_ACCESS_TOKEN || inputs.claude_access_token }}" \
+              -H "anthropic-version: 2023-06-01" \
+              --data-raw "{
+                \"conversation_uuid\": \"$CONVERSATION_ID\",
+                \"text\": $(echo "$PROMPT_CONTENT" | jq -Rs .),
+                \"model\": \"$ANTHROPIC_MODEL\",
+                \"timezone\": \"UTC\"
+              }")
+            
+            MSG_CODE=$(echo "$MSG_RESPONSE" | tail -n1)
+            MSG_BODY=$(echo "$MSG_RESPONSE" | head -n -1)
+            
+            if [ "$MSG_CODE" = "200" ]; then
+              # Extract response content
+              CLAUDE_CONTENT=$(echo "$MSG_BODY" | jq -r '.completion // .content // .text // "No response content"')
+              
+              # Create standardized output
+              echo "{
+                \"content\": $(echo "$CLAUDE_CONTENT" | jq -Rs .),
+                \"model\": \"$ANTHROPIC_MODEL\",
+                \"usage\": {\"input_tokens\": 0, \"output_tokens\": 0},
+                \"conversation_id\": \"$CONVERSATION_ID\"
+              }" > "$OUTPUT_FILE"
+              
+              echo "✅ Claude Web UI OAuth認証成功"
+              CLAUDE_EXIT_CODE=0
+            else
+              echo "{\"error\": \"Message failed: HTTP $MSG_CODE: $MSG_BODY\", \"status\": \"failed\"}" > "$OUTPUT_FILE"
+              echo "❌ メッセージ送信失敗: $MSG_CODE"
+              CLAUDE_EXIT_CODE=1
+            fi
+          else
+            echo "{\"error\": \"Conversation creation failed: HTTP $CONV_CODE: $CONV_BODY\", \"status\": \"failed\"}" > "$OUTPUT_FILE"
+            echo "❌ 会話作成失敗: $CONV_CODE"
+            CLAUDE_EXIT_CODE=1
+          fi
           
         elif [ -n "${{ inputs.anthropic_api_key }}" ]; then
           echo "Anthropic API Key認証でAPI呼び出し中..."
