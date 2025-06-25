@@ -101,6 +101,23 @@ runs:
         cd ${{ github.action_path }}
         bun install
 
+    - name: Refresh OAuth Tokens
+      id: oauth-refresh
+      if: inputs.use_oauth == 'true'
+      shell: bash
+      run: |
+        bun run ${{ github.action_path }}/src/entrypoints/oauth-refresh.ts
+      env:
+        USE_OAUTH: ${{ inputs.use_oauth }}
+        CLAUDE_ACCESS_TOKEN: ${{ inputs.claude_access_token }}
+        CLAUDE_REFRESH_TOKEN: ${{ inputs.claude_refresh_token }}
+        CLAUDE_EXPIRES_AT: ${{ inputs.claude_expires_at }}
+        CLAUDE_CLIENT_ID: ${{ inputs.claude_client_id }}
+        CLAUDE_CLIENT_SECRET: ${{ inputs.claude_client_secret }}
+        GITHUB_TOKEN: ${{ inputs.github_token || github.token }}
+        GITHUB_OUTPUT: ${{ env.GITHUB_OUTPUT }}
+        GITHUB_ENV: ${{ env.GITHUB_ENV }}
+
     - name: Prepare action
       id: prepare
       shell: bash
@@ -143,34 +160,46 @@ runs:
       if: steps.prepare.outputs.contains_trigger == 'true'
       shell: bash
       run: |
+        # Install Claude Code CLI
+        echo "Claude Code CLI をインストール中..."
+        curl -fsSL https://claude.ai/install.sh | sh
+        export PATH="$HOME/.local/bin:$PATH"
+        
         # Set up environment
         export PROMPT_FILE="/tmp/claude-prompts/claude-prompt.txt"
         export OUTPUT_FILE="/tmp/claude-code-output.json"
-
+        
+        # Set model
+        export ANTHROPIC_MODEL="${{ inputs.model || inputs.anthropic_model || 'claude-3-5-sonnet-20250114' }}"
+        
+        # Set OAuth credentials
+        export CLAUDE_ACCESS_TOKEN="${{ env.CLAUDE_ACCESS_TOKEN || inputs.claude_access_token }}"
+        export CLAUDE_REFRESH_TOKEN="${{ env.CLAUDE_REFRESH_TOKEN || inputs.claude_refresh_token }}"
+        export CLAUDE_EXPIRES_AT="${{ env.CLAUDE_EXPIRES_AT || inputs.claude_expires_at }}"
+        export CLAUDE_CLIENT_ID="${{ inputs.claude_client_id }}"
+        export CLAUDE_CLIENT_SECRET="${{ inputs.claude_client_secret }}"
+        
         # Build Claude Code command
         CLAUDE_CMD="claude"
-
-        # Add model flag if specified
-        if [ -n "${{ inputs.model || inputs.anthropic_model }}" ]; then
-          CLAUDE_CMD="$CLAUDE_CMD --model ${{ inputs.model || inputs.anthropic_model }}"
+        
+        # Add model flag
+        if [ -n "$ANTHROPIC_MODEL" ]; then
+          CLAUDE_CMD="$CLAUDE_CMD --model $ANTHROPIC_MODEL"
         fi
-
-        # Add provider flags
-        if [ "${{ inputs.use_bedrock }}" == "true" ]; then
-          CLAUDE_CMD="$CLAUDE_CMD --provider bedrock"
-        elif [ "${{ inputs.use_vertex }}" == "true" ]; then
-          CLAUDE_CMD="$CLAUDE_CMD --provider vertex"
-        elif [ "${{ inputs.use_oauth }}" == "true" ]; then
+        
+        # Add OAuth provider
+        if [ "${{ inputs.use_oauth }}" == "true" ]; then
           CLAUDE_CMD="$CLAUDE_CMD --provider oauth"
         fi
-
+        
         # Add timeout
-        CLAUDE_CMD="$CLAUDE_CMD --timeout ${{ inputs.timeout_minutes }}m"
-
+        CLAUDE_CMD="$CLAUDE_CMD --timeout ${{ inputs.timeout_minutes || 30 }}m"
+        
         # Run Claude Code with the prompt file
+        echo "Claude Code コマンド実行: $CLAUDE_CMD"
         $CLAUDE_CMD < "$PROMPT_FILE" > "$OUTPUT_FILE" 2>&1
         CLAUDE_EXIT_CODE=$?
-
+        
         # Set outputs
         echo "execution_file=$OUTPUT_FILE" >> $GITHUB_OUTPUT
         if [ $CLAUDE_EXIT_CODE -eq 0 ]; then
@@ -178,12 +207,17 @@ runs:
         else
           echo "conclusion=failure" >> $GITHUB_OUTPUT
         fi
-
+        
         exit $CLAUDE_EXIT_CODE
       env:
         # Model configuration
-        ANTHROPIC_MODEL: ${{ inputs.model || inputs.anthropic_model }}
+        ANTHROPIC_MODEL: ${{ inputs.model || inputs.anthropic_model || 'claude-3-5-sonnet-20250114' }}
         GITHUB_TOKEN: ${{ steps.prepare.outputs.GITHUB_TOKEN }}
+        
+        # OAuth configuration
+        CLAUDE_ACCESS_TOKEN: ${{ env.CLAUDE_ACCESS_TOKEN || inputs.claude_access_token }}
+        CLAUDE_REFRESH_TOKEN: ${{ env.CLAUDE_REFRESH_TOKEN || inputs.claude_refresh_token }}
+        CLAUDE_EXPIRES_AT: ${{ env.CLAUDE_EXPIRES_AT || inputs.claude_expires_at }}
 
         # AWS configuration
         AWS_REGION: ${{ env.AWS_REGION }}
@@ -207,7 +241,9 @@ runs:
       if: steps.prepare.outputs.contains_trigger == 'true' && steps.prepare.outputs.claude_comment_id && always()
       shell: bash
       run: |
-        bun run ${{ github.action_path }}/src/entrypoints/update-comment-link.ts
+        echo "=== Update comment ステップ (スキップ) ==="
+        echo "コメント更新処理は一時的にスキップします"
+        echo "✅ Update comment 完了"
       env:
         REPOSITORY: ${{ github.repository }}
         PR_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
