@@ -160,32 +160,8 @@ runs:
       if: steps.prepare.outputs.contains_trigger == 'true'
       shell: bash
       run: |
-        # Install Claude Gate (OAuth proxy for Claude API)
-        echo "Claude Gate をインストール中..."
-        curl -L https://github.com/ml0-1337/claude-gate/releases/latest/download/claude-gate-linux-amd64 -o ./claude-gate
-        chmod +x ./claude-gate
-        
-        # Set up OAuth authentication with Claude Gate
-        if [ "${{ inputs.use_oauth }}" == "true" ]; then
-          echo "Claude Gate OAuth認証設定中..."
-          
-          # Create config for Claude Gate
-          mkdir -p ~/.config/claude-gate
-          cat > ~/.config/claude-gate/auth.json << EOF
-        {
-          "access_token": "${{ env.CLAUDE_ACCESS_TOKEN || inputs.claude_access_token }}",
-          "refresh_token": "${{ env.CLAUDE_REFRESH_TOKEN || inputs.claude_refresh_token }}",
-          "expires_at": ${{ env.CLAUDE_EXPIRES_AT || inputs.claude_expires_at }}
-        }
-        EOF
-          
-          # Start Claude Gate proxy in background
-          ./claude-gate start --port 5789 --daemon &
-          CLAUDE_GATE_PID=$!
-          sleep 3  # Wait for startup
-          
-          echo "Claude Gate プロキシが開始されました (PID: $CLAUDE_GATE_PID)"
-        fi
+        # Skip Claude Gate - use direct API approach instead
+        echo "OAuth認証でClaude APIを直接呼び出します..."
         
         # Set up environment
         export PROMPT_FILE="/tmp/claude-prompts/claude-prompt.txt"
@@ -204,57 +180,73 @@ runs:
         echo "✅ プロンプトファイル確認完了: $PROMPT_FILE"
         echo "プロンプトファイルサイズ: $(wc -c < "$PROMPT_FILE") bytes"
         
-        # Use Claude Gate proxy instead of Claude Code CLI
+        # Use direct Anthropic API call with OAuth
         if [ "${{ inputs.use_oauth }}" == "true" ]; then
-          echo "Claude Gate経由でClaude APIを実行中..."
+          echo "Anthropic API直接呼び出し中..."
           
-          # Create a simple Python script to call Claude via the proxy
-          cat > /tmp/claude_call.py << 'PYTHON_EOF'
-          import json
-          import sys
-          import requests
+          # Create Python script for direct API call
+          python3 << 'PYTHON_SCRIPT'
+import json
+import os
+import requests
 
-          # Read prompt from file
-          with open(sys.argv[1], 'r') as f:
-              prompt = f.read()
+# Get environment variables
+prompt_file = os.environ['PROMPT_FILE']
+output_file = os.environ['OUTPUT_FILE']
+model = os.environ['ANTHROPIC_MODEL']
+access_token = os.environ.get('CLAUDE_ACCESS_TOKEN') or "${{ env.CLAUDE_ACCESS_TOKEN || inputs.claude_access_token }}"
 
-          # Call Claude via Gate proxy
-          response = requests.post(
-              'http://localhost:5789/v1/messages',
-              headers={
-                  'Content-Type': 'application/json',
-                  'anthropic-version': '2023-06-01',
-                  'x-api-key': 'sk-dummy'
-              },
-              json={
-                  'model': sys.argv[2],
-                  'max_tokens': 4000,
-                  'messages': [{'role': 'user', 'content': prompt}]
-              }
-          )
+# Read prompt
+with open(prompt_file, 'r') as f:
+    prompt = f.read()
 
-          # Write response to output file
-          with open(sys.argv[3], 'w') as f:
-              if response.status_code == 200:
-                  result = response.json()
-                  f.write(json.dumps({
-                      'content': result.get('content', [{'text': 'No content'}])[0].get('text', ''),
-                      'model': result.get('model', ''),
-                      'usage': result.get('usage', {})
-                  }, indent=2))
-              else:
-                  f.write(json.dumps({
-                      'error': f'HTTP {response.status_code}: {response.text}',
-                      'status': 'failed'
-                  }, indent=2))
-
-          sys.exit(0 if response.status_code == 200 else 1)
-          PYTHON_EOF
+# Call Anthropic API directly
+try:
+    response = requests.post(
+        'https://api.anthropic.com/v1/messages',
+        headers={
+            'Content-Type': 'application/json',
+            'anthropic-version': '2023-06-01',
+            'Authorization': f'Bearer {access_token}'
+        },
+        json={
+            'model': model,
+            'max_tokens': 4000,
+            'messages': [{'role': 'user', 'content': prompt}]
+        }
+    )
+    
+    # Write result
+    with open(output_file, 'w') as f:
+        if response.status_code == 200:
+            result = response.json()
+            content = result.get('content', [{}])[0].get('text', 'No content')
+            f.write(json.dumps({
+                'content': content,
+                'model': result.get('model', model),
+                'usage': result.get('usage', {})
+            }, indent=2))
+            print("✅ Claude API呼び出し成功")
+            exit(0)
+        else:
+            f.write(json.dumps({
+                'error': f'HTTP {response.status_code}: {response.text}',
+                'status': 'failed'
+            }, indent=2))
+            print(f"❌ Claude API呼び出し失敗: {response.status_code}")
+            exit(1)
+            
+except Exception as e:
+    with open(output_file, 'w') as f:
+        f.write(json.dumps({
+            'error': str(e),
+            'status': 'failed'
+        }, indent=2))
+    print(f"❌ エラー: {e}")
+    exit(1)
+PYTHON_SCRIPT
           
-          python3 /tmp/claude_call.py "$PROMPT_FILE" "$ANTHROPIC_MODEL" "$OUTPUT_FILE"
           CLAUDE_EXIT_CODE=$?
-          
-          echo "Claude Gate経由実行完了 (exit code: $CLAUDE_EXIT_CODE)"
           
         else
           echo "❌ OAuth以外の認証方法は現在サポートされていません"
