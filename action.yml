@@ -210,46 +210,46 @@ runs:
           
           # Create a simple Python script to call Claude via the proxy
           cat > /tmp/claude_call.py << 'PYTHON_EOF'
-import json
-import sys
-import requests
+          import json
+          import sys
+          import requests
 
-# Read prompt from file
-with open(sys.argv[1], 'r') as f:
-    prompt = f.read()
+          # Read prompt from file
+          with open(sys.argv[1], 'r') as f:
+              prompt = f.read()
 
-# Call Claude via Gate proxy
-response = requests.post(
-    'http://localhost:5789/v1/messages',
-    headers={
-        'Content-Type': 'application/json',
-        'anthropic-version': '2023-06-01',
-        'x-api-key': 'sk-dummy'  # Claude Gate accepts any API key
-    },
-    json={
-        'model': sys.argv[2],
-        'max_tokens': 4000,
-        'messages': [{'role': 'user', 'content': prompt}]
-    }
-)
+          # Call Claude via Gate proxy
+          response = requests.post(
+              'http://localhost:5789/v1/messages',
+              headers={
+                  'Content-Type': 'application/json',
+                  'anthropic-version': '2023-06-01',
+                  'x-api-key': 'sk-dummy'
+              },
+              json={
+                  'model': sys.argv[2],
+                  'max_tokens': 4000,
+                  'messages': [{'role': 'user', 'content': prompt}]
+              }
+          )
 
-# Write response to output file
-with open(sys.argv[3], 'w') as f:
-    if response.status_code == 200:
-        result = response.json()
-        f.write(json.dumps({
-            'content': result.get('content', [{'text': 'No content'}])[0].get('text', ''),
-            'model': result.get('model', ''),
-            'usage': result.get('usage', {})
-        }, indent=2))
-    else:
-        f.write(json.dumps({
-            'error': f'HTTP {response.status_code}: {response.text}',
-            'status': 'failed'
-        }, indent=2))
+          # Write response to output file
+          with open(sys.argv[3], 'w') as f:
+              if response.status_code == 200:
+                  result = response.json()
+                  f.write(json.dumps({
+                      'content': result.get('content', [{'text': 'No content'}])[0].get('text', ''),
+                      'model': result.get('model', ''),
+                      'usage': result.get('usage', {})
+                  }, indent=2))
+              else:
+                  f.write(json.dumps({
+                      'error': f'HTTP {response.status_code}: {response.text}',
+                      'status': 'failed'
+                  }, indent=2))
 
-sys.exit(0 if response.status_code == 200 else 1)
-PYTHON_EOF
+          sys.exit(0 if response.status_code == 200 else 1)
+          PYTHON_EOF
           
           python3 /tmp/claude_call.py "$PROMPT_FILE" "$ANTHROPIC_MODEL" "$OUTPUT_FILE"
           CLAUDE_EXIT_CODE=$?
