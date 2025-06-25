@@ -193,14 +193,7 @@ runs:
           echo ""
           
           # Create error output
-          cat > "$OUTPUT_FILE" << EOF
-{
-  "error": "OAuth authentication not supported by Anthropic API. Please use API Key instead.",
-  "status": "failed",
-  "solution": "Set use_oauth: false and provide anthropic_api_key",
-  "documentation": "https://docs.anthropic.com/en/api/getting-started"
-}
-EOF
+          echo '{"error": "OAuth authentication not supported by Anthropic API. Please use API Key instead.", "status": "failed", "solution": "Set use_oauth: false and provide anthropic_api_key", "documentation": "https://docs.anthropic.com/en/api/getting-started"}' > "$OUTPUT_FILE"
           
           CLAUDE_EXIT_CODE=1
           
