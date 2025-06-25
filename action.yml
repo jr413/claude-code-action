@@ -180,6 +180,16 @@ runs:
         }
         EOF
           echo "OAuth認証情報をセットアップしました"
+          
+          # Debug OAuth token (詰め集.yml lesson: トークン有効性を事前確認)
+          echo "=== OAuth Token Debug ==="
+          echo "Access Token存在: $([ -n "${{ env.CLAUDE_ACCESS_TOKEN || inputs.claude_access_token }}" ] && echo "Yes" || echo "No")"
+          echo "Refresh Token存在: $([ -n "${{ env.CLAUDE_REFRESH_TOKEN || inputs.claude_refresh_token }}" ] && echo "Yes" || echo "No")"
+          echo "Expires At: ${{ env.CLAUDE_EXPIRES_AT || inputs.claude_expires_at }}"
+          echo "現在時刻: $(date +%s)"
+          echo "Credentials file:"
+          cat ~/.claude/.credentials.json | jq .
+          echo "========================="
         fi
         
         # Set up environment
