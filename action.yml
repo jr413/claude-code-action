@@ -162,7 +162,7 @@ runs:
       run: |
         # Install Claude Code CLI
         echo "Claude Code CLI をインストール中..."
-        curl -fsSL https://claude.ai/install.sh | sh
+        npm install -g @anthropic-ai/claude-code@latest
         export PATH="$HOME/.local/bin:$PATH"
         
         # Set up environment
