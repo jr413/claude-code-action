@@ -180,19 +180,42 @@ runs:
         echo "✅ プロンプトファイル確認完了: $PROMPT_FILE"
         echo "プロンプトファイルサイズ: $(wc -c < "$PROMPT_FILE") bytes"
         
-        # Use direct Anthropic API call with curl (avoiding Python script YAML issues)
+        # OAuth tokens cannot be used with Anthropic API directly
         if [ "${{ inputs.use_oauth }}" == "true" ]; then
-          echo "Anthropic API直接呼び出し中..."
+          echo "❌ 重要な問題が判明しました"
+          echo "Anthropic APIは直接のOAuth認証をサポートしていません"
+          echo "OAuthトークンはClaude Web UIでのみ使用可能です"
+          echo ""
+          echo "解決策:"
+          echo "1. Anthropic API Keyを使用（use_oauth: false）"
+          echo "2. anthropic_api_key入力パラメータにAPI Keyを設定"
+          echo "3. Claude Max subscriberの場合、無料API枠があるかAnthropic公式を確認"
+          echo ""
+          
+          # Create error output
+          cat > "$OUTPUT_FILE" << EOF
+{
+  "error": "OAuth authentication not supported by Anthropic API. Please use API Key instead.",
+  "status": "failed",
+  "solution": "Set use_oauth: false and provide anthropic_api_key",
+  "documentation": "https://docs.anthropic.com/en/api/getting-started"
+}
+EOF
+          
+          CLAUDE_EXIT_CODE=1
+          
+        elif [ -n "${{ inputs.anthropic_api_key }}" ]; then
+          echo "Anthropic API Key認証でAPI呼び出し中..."
           
           # Read prompt content
           PROMPT_CONTENT=$(cat "$PROMPT_FILE")
           
-          # Call Anthropic API with curl
+          # Call Anthropic API with API Key
           HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" \
             -X POST https://api.anthropic.com/v1/messages \
             -H "Content-Type: application/json" \
             -H "anthropic-version: 2023-06-01" \
-            -H "Authorization: Bearer ${{ env.CLAUDE_ACCESS_TOKEN || inputs.claude_access_token }}" \
+            -H "Authorization: Bearer ${{ inputs.anthropic_api_key }}" \
             --data-raw "{
               \"model\": \"$ANTHROPIC_MODEL\",
               \"max_tokens\": 4000,
@@ -215,7 +238,8 @@ runs:
           fi
           
         else
-          echo "❌ OAuth以外の認証方法は現在サポートされていません"
+          echo "❌ 認証情報が設定されていません"
+          echo "use_oauth: false かつ anthropic_api_key を設定してください"
           exit 1
         fi
         
