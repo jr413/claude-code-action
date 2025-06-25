@@ -215,10 +215,30 @@ runs:
         # Add timeout
         CLAUDE_CMD="$CLAUDE_CMD --timeout ${{ inputs.timeout_minutes || 30 }}m"
         
-        # Run Claude Code with the prompt file
+        # Check if prompt file exists (詰め集.yml lesson: 透明性を保ち問題を正直に報告)
+        if [ ! -f "$PROMPT_FILE" ]; then
+          echo "❌ エラー: プロンプトファイルが存在しません: $PROMPT_FILE"
+          ls -la /tmp/claude-prompts/ || echo "❌ /tmp/claude-prompts/ ディレクトリが存在しません"
+          exit 1
+        fi
+        
+        echo "✅ プロンプトファイル確認完了: $PROMPT_FILE"
+        echo "プロンプトファイルサイズ: $(wc -c < "$PROMPT_FILE") bytes"
+        
+        # Run Claude Code with detailed error output
         echo "Claude Code コマンド実行: $CLAUDE_CMD"
+        echo "=== Claude Code 実行開始 ==="
         $CLAUDE_CMD < "$PROMPT_FILE" > "$OUTPUT_FILE" 2>&1
         CLAUDE_EXIT_CODE=$?
+        echo "=== Claude Code 終了 (exit code: $CLAUDE_EXIT_CODE) ==="
+        
+        # Show error details if failed
+        if [ $CLAUDE_EXIT_CODE -ne 0 ]; then
+          echo "❌ Claude Code実行失敗。エラー詳細:"
+          echo "--- OUTPUT FILE CONTENTS ---"
+          cat "$OUTPUT_FILE" || echo "出力ファイルが読めません"
+          echo "--- END OUTPUT ---"
+        fi
         
         # Set outputs
         echo "execution_file=$OUTPUT_FILE" >> $GITHUB_OUTPUT
