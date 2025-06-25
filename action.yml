@@ -165,19 +165,29 @@ runs:
         npm install -g @anthropic-ai/claude-code@latest
         export PATH="$HOME/.local/bin:$PATH"
         
+        # Set up OAuth credentials file (詰め集.yml lesson: OAuth認証はcredentials.jsonが必要)
+        if [ "${{ inputs.use_oauth }}" == "true" ]; then
+          mkdir -p ~/.claude
+          cat > ~/.claude/.credentials.json << EOF
+        {
+          "claudeAiOauth": {
+            "accessToken": "${{ env.CLAUDE_ACCESS_TOKEN || inputs.claude_access_token }}",
+            "refreshToken": "${{ env.CLAUDE_REFRESH_TOKEN || inputs.claude_refresh_token }}",
+            "expiresAt": ${{ env.CLAUDE_EXPIRES_AT || inputs.claude_expires_at }},
+            "scopes": ["user:inference", "user:profile"],
+            "subscriptionType": "max"
+          }
+        }
+        EOF
+          echo "OAuth認証情報をセットアップしました"
+        fi
+        
         # Set up environment
         export PROMPT_FILE="/tmp/claude-prompts/claude-prompt.txt"
         export OUTPUT_FILE="/tmp/claude-code-output.json"
         
         # Set model
         export ANTHROPIC_MODEL="${{ inputs.model || inputs.anthropic_model || 'claude-3-5-sonnet-20250114' }}"
-        
-        # Set OAuth credentials
-        export CLAUDE_ACCESS_TOKEN="${{ env.CLAUDE_ACCESS_TOKEN || inputs.claude_access_token }}"
-        export CLAUDE_REFRESH_TOKEN="${{ env.CLAUDE_REFRESH_TOKEN || inputs.claude_refresh_token }}"
-        export CLAUDE_EXPIRES_AT="${{ env.CLAUDE_EXPIRES_AT || inputs.claude_expires_at }}"
-        export CLAUDE_CLIENT_ID="${{ inputs.claude_client_id }}"
-        export CLAUDE_CLIENT_SECRET="${{ inputs.claude_client_secret }}"
         
         # Build Claude Code command
         CLAUDE_CMD="claude"
