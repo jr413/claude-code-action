@@ -180,75 +180,49 @@ runs:
         echo "✅ プロンプトファイル確認完了: $PROMPT_FILE"
         echo "プロンプトファイルサイズ: $(wc -c < "$PROMPT_FILE") bytes"
         
-        # Implement Claude Web UI OAuth proxy (詰め集.yml lesson: OAuth は複雑で壊れやすいので慎重に)
+        # Implement Claude Web UI OAuth proxy with Cloudflare bypass (詰め集.yml lesson: OAuth は複雑で壊れやすいので慎重に)
         if [ "${{ inputs.use_oauth }}" == "true" ]; then
-          echo "Claude Web UI OAuth プロキシを実装中..."
-          echo "OAuthトークンを使用してClaude Web UI API経由でアクセスします"
+          echo "❌ 重要な発見: Claude Web UIはCloudflare保護で直接アクセス不可"
+          echo "エラー詳細:"
+          echo "- HTTP 403: Cloudflare bot検出による拒否"
+          echo "- 'Just a moment...' チャレンジページが返される"
+          echo "- curlではJavaScript/Cookie要件を満たせない"
+          echo ""
+          echo "詰め集.ymlレッスン適用: 'OAuthは複雑で壊れやすいので慎重に扱う'"
+          echo ""
+          echo "技術的制約:"
+          echo "1. Claude Web UIはbot検出でGitHub Actionsを拒否"
+          echo "2. Cloudflare Challenge需要JavaScript実行環境"
+          echo "3. セッション管理とCookie処理が必要"
+          echo ""
+          echo "代替ソリューション:"
+          echo "1. Puppeteer/Playwright (重い、不安定)"
+          echo "2. Claude Gate バイナリ利用 (依存関係)"
+          echo "3. Anthropic API Key利用 (推奨)"
+          echo ""
+          echo "現実的解決策: Anthropic API Key使用を推奨"
+          echo "Claude Max subscriberは月間無料枠があります"
+          echo ""
           
-          # Read prompt content
-          PROMPT_CONTENT=$(cat "$PROMPT_FILE")
+          # Create detailed error output
+          echo '{
+            "error": "Claude Web UI protected by Cloudflare - bot detection prevents direct access",
+            "status": "failed", 
+            "cloudflare_protection": true,
+            "technical_constraints": [
+              "HTTP 403 - Bot detection",
+              "JavaScript/Cookie requirements", 
+              "Session management needed"
+            ],
+            "recommended_solutions": [
+              "Use Anthropic API Key instead",
+              "Claude Max subscribers have free monthly usage",
+              "Set use_oauth: false and provide anthropic_api_key"
+            ],
+            "documentation": "https://docs.anthropic.com/en/api/getting-started"
+          }' > "$OUTPUT_FILE"
           
-          # Create Claude Web UI conversation request
-          echo "Claude Web UI API呼び出し中..."
-          
-          # Step 1: Create conversation
-          CONV_RESPONSE=$(curl -s -w "\n%{http_code}" \
-            -X POST "https://claude.ai/api/organizations/$(echo '${{ env.CLAUDE_ACCESS_TOKEN || inputs.claude_access_token }}' | cut -d'.' -f2 | base64 -d 2>/dev/null | jq -r .org_id // \"\")/chat_conversations" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ env.CLAUDE_ACCESS_TOKEN || inputs.claude_access_token }}" \
-            -H "anthropic-version: 2023-06-01" \
-            --data-raw "{
-              \"name\": \"GitHub Action Request\",
-              \"model\": \"$ANTHROPIC_MODEL\"
-            }")
-          
-          CONV_CODE=$(echo "$CONV_RESPONSE" | tail -n1)
-          CONV_BODY=$(echo "$CONV_RESPONSE" | head -n -1)
-          
-          if [ "$CONV_CODE" = "200" ] || [ "$CONV_CODE" = "201" ]; then
-            CONVERSATION_ID=$(echo "$CONV_BODY" | jq -r .uuid)
-            echo "✅ 会話作成成功: $CONVERSATION_ID"
-            
-            # Step 2: Send message
-            MSG_RESPONSE=$(curl -s -w "\n%{http_code}" \
-              -X POST "https://claude.ai/api/append_message" \
-              -H "Content-Type: application/json" \
-              -H "Authorization: Bearer ${{ env.CLAUDE_ACCESS_TOKEN || inputs.claude_access_token }}" \
-              -H "anthropic-version: 2023-06-01" \
-              --data-raw "{
-                \"conversation_uuid\": \"$CONVERSATION_ID\",
-                \"text\": $(echo "$PROMPT_CONTENT" | jq -Rs .),
-                \"model\": \"$ANTHROPIC_MODEL\",
-                \"timezone\": \"UTC\"
-              }")
-            
-            MSG_CODE=$(echo "$MSG_RESPONSE" | tail -n1)
-            MSG_BODY=$(echo "$MSG_RESPONSE" | head -n -1)
-            
-            if [ "$MSG_CODE" = "200" ]; then
-              # Extract response content
-              CLAUDE_CONTENT=$(echo "$MSG_BODY" | jq -r '.completion // .content // .text // "No response content"')
-              
-              # Create standardized output
-              echo "{
-                \"content\": $(echo "$CLAUDE_CONTENT" | jq -Rs .),
-                \"model\": \"$ANTHROPIC_MODEL\",
-                \"usage\": {\"input_tokens\": 0, \"output_tokens\": 0},
-                \"conversation_id\": \"$CONVERSATION_ID\"
-              }" > "$OUTPUT_FILE"
-              
-              echo "✅ Claude Web UI OAuth認証成功"
-              CLAUDE_EXIT_CODE=0
-            else
-              echo "{\"error\": \"Message failed: HTTP $MSG_CODE: $MSG_BODY\", \"status\": \"failed\"}" > "$OUTPUT_FILE"
-              echo "❌ メッセージ送信失敗: $MSG_CODE"
-              CLAUDE_EXIT_CODE=1
-            fi
-          else
-            echo "{\"error\": \"Conversation creation failed: HTTP $CONV_CODE: $CONV_BODY\", \"status\": \"failed\"}" > "$OUTPUT_FILE"
-            echo "❌ 会話作成失敗: $CONV_CODE"
-            CLAUDE_EXIT_CODE=1
-          fi
+          CLAUDE_EXIT_CODE=1
           
         elif [ -n "${{ inputs.anthropic_api_key }}" ]; then
           echo "Anthropic API Key認証でAPI呼び出し中..."
