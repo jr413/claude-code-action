@@ -162,8 +162,8 @@ runs:
       run: |
         # Install Claude Gate (OAuth proxy for Claude API)
         echo "Claude Gate をインストール中..."
-        curl -L https://github.com/ml0-1337/claude-gate/releases/latest/download/claude-gate-linux-amd64 -o /usr/local/bin/claude-gate
-        chmod +x /usr/local/bin/claude-gate
+        curl -L https://github.com/ml0-1337/claude-gate/releases/latest/download/claude-gate-linux-amd64 -o ./claude-gate
+        chmod +x ./claude-gate
         
         # Set up OAuth authentication with Claude Gate
         if [ "${{ inputs.use_oauth }}" == "true" ]; then
@@ -180,7 +180,7 @@ runs:
         EOF
           
           # Start Claude Gate proxy in background
-          claude-gate start --port 5789 --daemon &
+          ./claude-gate start --port 5789 --daemon &
           CLAUDE_GATE_PID=$!
           sleep 3  # Wait for startup
           
