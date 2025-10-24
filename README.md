@@ -20,6 +20,7 @@ A general-purpose [Claude Code](https://claude.ai/code) action for GitHub PRs an
 - 🛠️ **Flexible Tool Access**: Access to GitHub APIs and file operations (additional tools can be enabled via configuration)
 - 📋 **Progress Tracking**: Visual progress indicators with checkboxes that dynamically update as Claude completes tasks
 - 🏃 **Runs on Your Infrastructure**: The action executes entirely on your own GitHub runner (Anthropic API calls go to your chosen provider)
+- 🎯 **TeleAI Pro API Integration**: Support for TeleAI Pro API with audio transcription, sentiment analysis, and text summarization
 
 ## Initial Setup
 
@@ -421,6 +422,31 @@ Both AWS Bedrock and GCP Vertex AI require OIDC authentication.
   permissions:
     id-token: write # Required for OIDC
 ```
+
+## TeleAI Pro API Integration
+
+This action includes support for TeleAI Pro API, enabling audio transcription, sentiment analysis, and text summarization capabilities.
+
+### Configuration
+
+Add your TeleAI API credentials to GitHub secrets:
+
+```yaml
+- uses: Akira-Papa/claude-code-action@beta
+  with:
+    teleai_api_token: ${{ secrets.TELEAI_API_TOKEN }}
+    teleai_api_url: "https://teleai-pro-api.onrender.com" # Optional
+    # ... other inputs
+```
+
+### Available Features
+
+- **Audio Transcription**: Convert audio to text with confidence scores
+- **Sentiment Analysis**: Analyze text sentiment (positive/negative/neutral)
+- **Text Summarization**: Generate concise summaries of long texts
+- **Health Monitoring**: Check API status and availability
+
+For detailed usage, see the [TeleAI integration documentation](./src/teleai/README.md).
 
 ## Security
 
