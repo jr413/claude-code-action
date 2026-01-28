@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>座席表メーカー</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background: #f0f2f5; color: #333; }
+.app { max-width: 1200px; margin: 0 auto; padding: 20px; }
+h1 { text-align: center; margin-bottom: 24px; font-size: 1.8em; color: #1a1a2e; }
+.panels { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+@media (max-width: 800px) { .panels { grid-template-columns: 1fr; } }
+.panel { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.panel h2 { font-size: 1.1em; margin-bottom: 12px; color: #16213e; border-bottom: 2px solid #e8e8e8; padding-bottom: 8px; }
+label { display: block; font-size: 0.85em; color: #555; margin-bottom: 4px; margin-top: 10px; }
+input, textarea, select { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95em; }
+textarea { resize: vertical; min-height: 80px; font-family: inherit; }
+button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.95em; font-weight: 600; transition: background 0.2s; }
+.btn-primary { background: #4361ee; color: #fff; }
+.btn-primary:hover { background: #3a56d4; }
+.btn-secondary { background: #e0e0e0; color: #333; }
+.btn-secondary:hover { background: #d0d0d0; }
+.btn-danger { background: #ef476f; color: #fff; font-size: 0.8em; padding: 4px 10px; }
+.actions { text-align: center; margin: 20px 0; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+/* Table layout */
+.seating-result { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.seating-result h2 { font-size: 1.2em; margin-bottom: 16px; color: #16213e; text-align: center; }
+.table-grid { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; }
+.table-block { background: #fafbff; border: 2px solid #d0d7f7; border-radius: 12px; padding: 16px; min-width: 220px; position: relative; }
+.table-block h3 { text-align: center; font-size: 1em; color: #4361ee; margin-bottom: 10px; }
+.seat-list { list-style: none; }
+.seat-list li { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; margin: 4px 0; border-radius: 6px; background: #e8ecff; cursor: grab; transition: background 0.15s; font-size: 0.9em; }
+.seat-list li:active { cursor: grabbing; }
+.seat-list li.drag-over { background: #c5cdff; border: 1px dashed #4361ee; }
+.seat-list li .seat-rank { font-size: 0.75em; color: #888; margin-left: 8px; }
+.seat-list li .seat-label { font-weight: 500; flex: 1; }
+.seat-list li .group-badge { font-size: 0.7em; background: #ffd166; color: #333; border-radius: 4px; padding: 1px 5px; margin-left: 4px; }
+.seat-empty { color: #aaa; font-style: italic; }
+.kamiza { border-left: 3px solid #ef476f; }
+.shimoza { border-left: 3px solid #06d6a0; }
+.legend { display: flex; gap: 16px; justify-content: center; margin: 12px 0; font-size: 0.8em; color: #666; }
+.legend span::before { content: ''; display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 4px; vertical-align: middle; }
+.legend .k::before { background: #ef476f; }
+.legend .s::before { background: #06d6a0; }
+
+/* Group tags */
+.group-input-row { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+.group-input-row input { flex: 1; }
+.group-tag { display: inline-flex; align-items: center; gap: 4px; background: #e8ecff; border-radius: 4px; padding: 2px 8px; margin: 2px; font-size: 0.85em; }
+.group-tag.separate { background: #ffe0e6; }
+.group-tag button { background: none; border: none; cursor: pointer; font-size: 0.8em; padding: 0 2px; color: #999; }
+.group-tags-container { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+
+/* Participant table */
+.participant-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.85em; }
+.participant-table th { background: #f0f2f5; padding: 6px 8px; text-align: left; font-weight: 600; }
+.participant-table td { padding: 4px 8px; border-bottom: 1px solid #eee; }
+.participant-table td input { padding: 4px 6px; font-size: 0.9em; }
+.participant-table .rank-input { width: 50px; text-align: center; }
+.participant-table .name-input { width: 100%; }
+.participant-table .group-input { width: 80px; }
+
+.empty-msg { text-align: center; color: #aaa; padding: 40px; font-size: 1.1em; }
+.help-text { font-size: 0.78em; color: #999; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🪑 座席表メーカー</h1>
+
+  <div class="panels">
+    <!-- Left: Participants -->
+    <div class="panel">
+      <h2>参加者名簿</h2>
+      <label>一括入力（1行1名、カンマ区切りで 名前,優先順,グループ）</label>
+      <textarea id="bulkInput" placeholder="例：&#10;山田太郎,1,営業&#10;佐藤花子,2,営業&#10;鈴木一郎,3,技術&#10;田中次郎,4,技術&#10;高橋三郎,5"></textarea>
+      <div class="help-text">優先順: 1が最上位（上座）。グループは省略可。</div>
+      <button class="btn-primary" style="margin-top:10px" onclick="parseBulkInput()">名簿を読み込み</button>
+
+      <div style="margin-top:16px">
+        <table class="participant-table">
+          <thead><tr><th>名前</th><th>優先順</th><th>グループ</th><th></th></tr></thead>
+          <tbody id="participantBody"></tbody>
+        </table>
+        <button class="btn-secondary" style="margin-top:8px" onclick="addParticipantRow()">＋ 行を追加</button>
+      </div>
+    </div>
+
+    <!-- Right: Settings -->
+    <div class="panel">
+      <h2>テーブル設定</h2>
+      <label>テーブル数</label>
+      <input type="number" id="tableCount" value="2" min="1" max="20">
+      <label>テーブルあたりの人数（カンマ区切りで個別指定可）</label>
+      <input type="text" id="seatsPerTable" value="5" placeholder="例: 5 または 4,6,5">
+      <div class="help-text">1つの数字→全テーブル同じ。カンマ区切り→テーブルごとに指定。</div>
+
+      <h2 style="margin-top:20px">グループ制約</h2>
+      <label>固めたいグループ（同グループ名を同テーブルに配置）</label>
+      <div id="keepTogetherTags" class="group-tags-container"></div>
+      <div class="group-input-row">
+        <input type="text" id="keepTogetherInput" placeholder="グループ名を入力">
+        <button class="btn-secondary" onclick="addGroupTag('together')">追加</button>
+      </div>
+
+      <label>ばらけさせたいグループ（同グループ名を別テーブルに分散）</label>
+      <div id="separateTags" class="group-tags-container"></div>
+      <div class="group-input-row">
+        <input type="text" id="separateInput" placeholder="グループ名を入力">
+        <button class="btn-secondary" onclick="addGroupTag('separate')">追加</button>
+      </div>
+
+      <h2 style="margin-top:20px">上座・下座</h2>
+      <p style="font-size:0.85em; color:#666">優先順の高い人（数字が小さい）が各テーブルの上座（先頭）に配置されます。</p>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-primary" onclick="generateSeating()" style="font-size:1.1em; padding: 12px 32px;">🎲 座席表を自動生成</button>
+    <button class="btn-secondary" onclick="exportText()">📋 テキストでコピー</button>
+  </div>
+
+  <div class="seating-result" id="resultArea">
+    <h2>座席表</h2>
+    <div class="legend">
+      <span class="k">上座側</span>
+      <span class="s">下座側</span>
+    </div>
+    <div id="tableGrid" class="table-grid">
+      <p class="empty-msg">上の「座席表を自動生成」ボタンを押してください</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// State
+let participants = [];
+let keepTogether = [];
+let separateGroups = [];
+let currentSeating = []; // array of arrays
+
+// --- Participants ---
+function parseBulkInput() {
+  const text = document.getElementById('bulkInput').value.trim();
+  if (!text) return;
+  const lines = text.split('\n').filter(l => l.trim());
+  participants = lines.map((line, i) => {
+    const parts = line.split(',').map(s => s.trim());
+    return { name: parts[0] || '', rank: parseInt(parts[1]) || (i + 1), group: parts[2] || '' };
+  });
+  renderParticipants();
+}
+
+function renderParticipants() {
+  const tbody = document.getElementById('participantBody');
+  tbody.innerHTML = '';
+  participants.forEach((p, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input class="name-input" value="${esc(p.name)}" onchange="participants[${i}].name=this.value"></td>
+      <td><input class="rank-input" type="number" value="${p.rank}" onchange="participants[${i}].rank=parseInt(this.value)||${i+1}"></td>
+      <td><input class="group-input" value="${esc(p.group)}" onchange="participants[${i}].group=this.value"></td>
+      <td><button class="btn-danger" onclick="participants.splice(${i},1);renderParticipants()">✕</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function addParticipantRow() {
+  participants.push({ name: '', rank: participants.length + 1, group: '' });
+  renderParticipants();
+}
+
+function esc(s) { return s.replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+
+// --- Group Tags ---
+function addGroupTag(type) {
+  const inputId = type === 'together' ? 'keepTogetherInput' : 'separateInput';
+  const val = document.getElementById(inputId).value.trim();
+  if (!val) return;
+  if (type === 'together') { if (!keepTogether.includes(val)) keepTogether.push(val); }
+  else { if (!separateGroups.includes(val)) separateGroups.push(val); }
+  document.getElementById(inputId).value = '';
+  renderGroupTags();
+}
+
+function renderGroupTags() {
+  ['together', 'separate'].forEach(type => {
+    const arr = type === 'together' ? keepTogether : separateGroups;
+    const container = document.getElementById(type === 'together' ? 'keepTogetherTags' : 'separateTags');
+    container.innerHTML = arr.map((g, i) =>
+      `<span class="group-tag ${type === 'separate' ? 'separate' : ''}">${esc(g)} <button onclick="${type === 'together' ? 'keepTogether' : 'separateGroups'}.splice(${i},1);renderGroupTags()">✕</button></span>`
+    ).join('');
+  });
+}
+
+// --- Seating Generation ---
+function getTableConfig() {
+  const count = parseInt(document.getElementById('tableCount').value) || 2;
+  const seatsRaw = document.getElementById('seatsPerTable').value.trim();
+  const parts = seatsRaw.split(',').map(s => parseInt(s.trim())).filter(n => n > 0);
+  const seats = [];
+  for (let i = 0; i < count; i++) {
+    seats.push(parts.length === 1 ? parts[0] : (parts[i] || parts[parts.length - 1]));
+  }
+  return seats;
+}
+
+function generateSeating() {
+  const valid = participants.filter(p => p.name.trim());
+  if (valid.length === 0) { alert('参加者を入力してください'); return; }
+
+  const tableSeats = getTableConfig();
+  const tableCount = tableSeats.length;
+
+  // Sort by rank (lower = higher priority = 上座)
+  const sorted = [...valid].sort((a, b) => a.rank - b.rank);
+
+  // Initialize tables
+  const tables = Array.from({ length: tableCount }, () => []);
+
+  // Phase 1: Place keep-together groups
+  const placed = new Set();
+  keepTogether.forEach(groupName => {
+    const members = sorted.filter(p => p.group === groupName && !placed.has(p.name));
+    if (members.length === 0) return;
+    // Find table with most room that can fit
+    let bestTable = -1, bestSpace = -1;
+    for (let t = 0; t < tableCount; t++) {
+      const space = tableSeats[t] - tables[t].length;
+      if (space >= members.length && space > bestSpace) { bestTable = t; bestSpace = space; }
+    }
+    if (bestTable === -1) bestTable = 0; // fallback
+    members.forEach(m => { tables[bestTable].push(m); placed.add(m.name); });
+  });
+
+  // Phase 2: Place separate groups (spread across tables)
+  separateGroups.forEach(groupName => {
+    const members = sorted.filter(p => p.group === groupName && !placed.has(p.name));
+    members.forEach((m, i) => {
+      // Find table with fewest members of this group that has space
+      let bestTable = 0, minSame = Infinity, maxSpace = 0;
+      for (let t = 0; t < tableCount; t++) {
+        const space = tableSeats[t] - tables[t].length;
+        const sameCount = tables[t].filter(x => x.group === groupName).length;
+        if (space > 0 && (sameCount < minSame || (sameCount === minSame && space > maxSpace))) {
+          bestTable = t; minSame = sameCount; maxSpace = space;
+        }
+      }
+      tables[bestTable].push(m);
+      placed.add(m.name);
+    });
+  });
+
+  // Phase 3: Place remaining participants (round-robin by rank)
+  const remaining = sorted.filter(p => !placed.has(p.name));
+  remaining.forEach(p => {
+    // Find table with most remaining space
+    let bestTable = 0, maxSpace = 0;
+    for (let t = 0; t < tableCount; t++) {
+      const space = tableSeats[t] - tables[t].length;
+      if (space > maxSpace) { bestTable = t; maxSpace = space; }
+    }
+    tables[bestTable].push(p);
+  });
+
+  // Sort each table by rank (上座 first)
+  tables.forEach(t => t.sort((a, b) => a.rank - b.rank));
+
+  currentSeating = tables;
+  renderSeating();
+}
+
+function renderSeating() {
+  const grid = document.getElementById('tableGrid');
+  const tableSeats = getTableConfig();
+  if (currentSeating.length === 0) { grid.innerHTML = '<p class="empty-msg">座席表がありません</p>'; return; }
+
+  grid.innerHTML = '';
+  currentSeating.forEach((table, ti) => {
+    const block = document.createElement('div');
+    block.className = 'table-block';
+    block.innerHTML = `<h3>テーブル ${ti + 1}（定員${tableSeats[ti]}名）</h3>`;
+    const ul = document.createElement('ul');
+    ul.className = 'seat-list';
+    ul.dataset.table = ti;
+
+    const half = Math.ceil(table.length / 2);
+    table.forEach((p, si) => {
+      const li = document.createElement('li');
+      li.draggable = true;
+      li.dataset.table = ti;
+      li.dataset.seat = si;
+      const pos = si < half ? 'kamiza' : 'shimoza';
+      li.className = pos;
+      li.innerHTML = `<span class="seat-label">${esc(p.name)}</span>${p.group ? `<span class="group-badge">${esc(p.group)}</span>` : ''}<span class="seat-rank">#${p.rank}</span>`;
+
+      // Drag events
+      li.addEventListener('dragstart', onDragStart);
+      li.addEventListener('dragover', onDragOver);
+      li.addEventListener('drop', onDrop);
+      li.addEventListener('dragenter', e => li.classList.add('drag-over'));
+      li.addEventListener('dragleave', e => li.classList.remove('drag-over'));
+      ul.appendChild(li);
+    });
+
+    // Allow drop on empty area
+    ul.addEventListener('dragover', e => e.preventDefault());
+    ul.addEventListener('drop', onDropToTable);
+
+    block.appendChild(ul);
+    grid.appendChild(block);
+  });
+}
+
+// --- Drag & Drop ---
+let dragData = null;
+
+function onDragStart(e) {
+  dragData = { table: parseInt(e.target.dataset.table), seat: parseInt(e.target.dataset.seat) };
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragOver(e) { e.preventDefault(); }
+
+function onDrop(e) {
+  e.preventDefault();
+  e.target.closest('li')?.classList.remove('drag-over');
+  if (!dragData) return;
+  const targetTable = parseInt(e.target.closest('li')?.dataset.table ?? e.target.closest('ul')?.dataset.table);
+  const targetSeat = parseInt(e.target.closest('li')?.dataset.seat);
+  if (isNaN(targetTable)) return;
+
+  const src = currentSeating[dragData.table][dragData.seat];
+  if (!isNaN(targetSeat)) {
+    // Swap
+    const dst = currentSeating[targetTable][targetSeat];
+    currentSeating[targetTable][targetSeat] = src;
+    currentSeating[dragData.table][dragData.seat] = dst;
+  } else {
+    // Move to table
+    currentSeating[dragData.table].splice(dragData.seat, 1);
+    currentSeating[targetTable].push(src);
+  }
+  dragData = null;
+  renderSeating();
+}
+
+function onDropToTable(e) {
+  if (e.target.tagName === 'LI') return; // handled by li drop
+  onDrop(e);
+}
+
+// --- Export ---
+function exportText() {
+  if (currentSeating.length === 0) { alert('先に座席表を生成してください'); return; }
+  const tableSeats = getTableConfig();
+  let text = '=== 座席表 ===\n\n';
+  currentSeating.forEach((table, ti) => {
+    const half = Math.ceil(table.length / 2);
+    text += `■ テーブル ${ti + 1}（定員${tableSeats[ti]}名）\n`;
+    table.forEach((p, si) => {
+      const pos = si < half ? '【上座】' : '【下座】';
+      text += `  ${pos} ${p.name}（優先順: ${p.rank}）${p.group ? ` [${p.group}]` : ''}\n`;
+    });
+    text += '\n';
+  });
+  navigator.clipboard.writeText(text).then(() => alert('クリップボードにコピーしました！')).catch(() => {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    alert('クリップボードにコピーしました！');
+  });
+}
+
+// Init
+renderParticipants();
+renderGroupTags();
+</script>
+</body>
+</html>
