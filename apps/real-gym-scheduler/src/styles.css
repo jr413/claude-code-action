@@ -13,6 +13,16 @@ body {
   color: #1c1c1e;
 }
 
+.demo-banner {
+  background: #fff4d6;
+  color: #7a5b00;
+  border: 1px solid #f0d38a;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  margin: 0 0 0.75rem;
+}
+
 .member-picker {
   display: flex;
   flex-direction: column;

@@ -2,7 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Calendar } from "./components/Calendar";
 import { DayPanel } from "./components/DayPanel";
 import { MEMBERS, type Member } from "./businessHours";
-import { supabase } from "./supabaseClient";
+import {
+  DEMO_MODE,
+  deleteSlot,
+  listSlots,
+  subscribeToChanges,
+  upsertSlot,
+} from "./dataClient";
 import type { Slot } from "./types";
 
 const MEMBER_STORAGE_KEY = "real-gym-scheduler:member";
@@ -35,37 +41,20 @@ export default function App() {
     let cancelled = false;
     async function fetchSlots() {
       setLoading(true);
-      const { data, error: fetchError } = await supabase
-        .from("slots")
-        .select("*")
-        .gte("slot_date", startKey)
-        .lte("slot_date", endKey)
-        .order("slot_date", { ascending: true });
+      const { data, error: fetchError } = await listSlots(startKey, endKey);
       if (!cancelled) {
-        if (fetchError) {
-          setError(fetchError.message);
-        } else {
-          setSlots((data ?? []) as Slot[]);
-        }
+        if (fetchError) setError(fetchError);
+        else setSlots(data);
         setLoading(false);
       }
     }
     fetchSlots();
 
-    const channel = supabase
-      .channel(`slots-${startKey}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "slots" },
-        () => {
-          fetchSlots();
-        },
-      )
-      .subscribe();
+    const unsubscribe = subscribeToChanges(fetchSlots);
 
     return () => {
       cancelled = true;
-      supabase.removeChannel(channel);
+      unsubscribe();
     };
   }, [startKey, endKey]);
 
@@ -78,16 +67,13 @@ export default function App() {
     if (!currentMember || !selectedDateKey) return;
     setSaving(true);
     setError(null);
-    const { error: saveError } = await supabase.from("slots").upsert(
-      {
-        member: currentMember,
-        slot_date: selectedDateKey,
-        start_time: `${start}:00`,
-        end_time: `${end}:00`,
-      },
-      { onConflict: "member,slot_date" },
-    );
-    if (saveError) setError(saveError.message);
+    const { error: saveError } = await upsertSlot({
+      member: currentMember,
+      slot_date: selectedDateKey,
+      start_time: `${start}:00`,
+      end_time: `${end}:00`,
+    });
+    if (saveError) setError(saveError);
     setSaving(false);
   }
 
@@ -95,18 +81,23 @@ export default function App() {
     if (!currentMember || !selectedDateKey) return;
     setSaving(true);
     setError(null);
-    const { error: deleteError } = await supabase
-      .from("slots")
-      .delete()
-      .eq("member", currentMember)
-      .eq("slot_date", selectedDateKey);
-    if (deleteError) setError(deleteError.message);
+    const { error: deleteError } = await deleteSlot(
+      currentMember,
+      selectedDateKey,
+    );
+    if (deleteError) setError(deleteError);
     setSaving(false);
   }
 
   if (!currentMember) {
     return (
       <div className="member-picker">
+        {DEMO_MODE && (
+          <p className="demo-banner">
+            デモモード:
+            Supabase未接続のため、データはこの端末のブラウザにのみ保存されます。
+          </p>
+        )}
         <h1>REAL ジム スケジューラー</h1>
         <p>あなたの名前を選んでください</p>
         <div className="member-picker-list">
@@ -133,6 +124,12 @@ export default function App() {
 
   return (
     <div className="app">
+      {DEMO_MODE && (
+        <p className="demo-banner">
+          デモモード:
+          Supabase未接続のため、データはこの端末のブラウザにのみ保存されます。
+        </p>
+      )}
       <header className="app-header">
         <h1>REAL ジム スケジューラー</h1>
         <div className="app-header-right">

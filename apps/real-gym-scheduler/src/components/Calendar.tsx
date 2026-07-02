@@ -117,7 +117,8 @@ export function Calendar({
                   ))}
                   {allFourOverlap && overlap && (
                     <span className="calendar-match-label">
-                      全員OK {overlap.start}-{overlap.end}
+                      全員OK {overlap.start.slice(0, 5)}-
+                      {overlap.end.slice(0, 5)}
                     </span>
                   )}
                 </div>
