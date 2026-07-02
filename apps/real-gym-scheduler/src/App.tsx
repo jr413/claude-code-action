@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Calendar } from "./components/Calendar";
 import { DayPanel } from "./components/DayPanel";
-import { MEMBERS, type Member } from "./businessHours";
+import { MEMBERS, MEMBER_COLORS, type Member } from "./businessHours";
 import {
   DEMO_MODE,
   deleteSlot,
@@ -34,6 +34,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dayPanelRef = useRef<HTMLDivElement>(null);
 
   const { startKey, endKey } = useMemo(() => monthRange(month), [month]);
 
@@ -58,6 +59,15 @@ export default function App() {
     };
   }, [startKey, endKey]);
 
+  useEffect(() => {
+    if (selectedDateKey) {
+      dayPanelRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [selectedDateKey]);
+
   function chooseMember(member: Member) {
     localStorage.setItem(MEMBER_STORAGE_KEY, member);
     setCurrentMember(member);
@@ -67,13 +77,28 @@ export default function App() {
     if (!currentMember || !selectedDateKey) return;
     setSaving(true);
     setError(null);
-    const { error: saveError } = await upsertSlot({
+    const input = {
       member: currentMember,
       slot_date: selectedDateKey,
       start_time: `${start}:00`,
       end_time: `${end}:00`,
-    });
-    if (saveError) setError(saveError);
+    };
+    const { error: saveError } = await upsertSlot(input);
+    if (saveError) {
+      setError(saveError);
+    } else {
+      setSlots((prev) => [
+        ...prev.filter(
+          (s) =>
+            !(s.member === currentMember && s.slot_date === selectedDateKey),
+        ),
+        {
+          id: `${currentMember}-${selectedDateKey}`,
+          created_at: new Date().toISOString(),
+          ...input,
+        },
+      ]);
+    }
     setSaving(false);
   }
 
@@ -85,7 +110,16 @@ export default function App() {
       currentMember,
       selectedDateKey,
     );
-    if (deleteError) setError(deleteError);
+    if (deleteError) {
+      setError(deleteError);
+    } else {
+      setSlots((prev) =>
+        prev.filter(
+          (s) =>
+            !(s.member === currentMember && s.slot_date === selectedDateKey),
+        ),
+      );
+    }
     setSaving(false);
   }
 
@@ -105,6 +139,10 @@ export default function App() {
             <button
               key={member}
               type="button"
+              style={{
+                borderColor: MEMBER_COLORS[member],
+                color: MEMBER_COLORS[member],
+              }}
               onClick={() => chooseMember(member)}
             >
               {member}
@@ -133,7 +171,9 @@ export default function App() {
       <header className="app-header">
         <h1>REAL ジム スケジューラー</h1>
         <div className="app-header-right">
-          <span>{currentMember} さん</span>
+          <span style={{ color: MEMBER_COLORS[currentMember] }}>
+            {currentMember} さん
+          </span>
           <button type="button" onClick={() => setCurrentMember(null)}>
             切替
           </button>
@@ -156,15 +196,18 @@ export default function App() {
           }
         />
         {selectedDate && (
-          <DayPanel
-            date={selectedDate}
-            daySlots={daySlots}
-            currentMember={currentMember}
-            saving={saving}
-            error={error}
-            onSave={handleSave}
-            onDelete={handleDelete}
-          />
+          <div ref={dayPanelRef}>
+            <DayPanel
+              date={selectedDate}
+              daySlots={daySlots}
+              currentMember={currentMember}
+              saving={saving}
+              error={error}
+              onSave={handleSave}
+              onDelete={handleDelete}
+              onSwitchMember={chooseMember}
+            />
+          </div>
         )}
       </div>
     </div>

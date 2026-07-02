@@ -1,4 +1,10 @@
-import { getBusinessHours, MEMBERS, type Member } from "../businessHours";
+import {
+  MEMBERS,
+  MEMBER_COLORS,
+  getBusinessHours,
+  intersectRanges,
+  type Member,
+} from "../businessHours";
 import type { Slot } from "../types";
 import { SlotForm } from "./SlotForm";
 
@@ -10,6 +16,7 @@ interface DayPanelProps {
   error: string | null;
   onSave: (start: string, end: string) => Promise<void>;
   onDelete: () => Promise<void>;
+  onSwitchMember: (member: Member) => void;
 }
 
 export function DayPanel({
@@ -20,9 +27,15 @@ export function DayPanel({
   error,
   onSave,
   onDelete,
+  onSwitchMember,
 }: DayPanelProps) {
   const hours = getBusinessHours(date);
   const mySlot = daySlots.find((s) => s.member === currentMember) ?? null;
+  const overlap = !hours.closed
+    ? intersectRanges(
+        daySlots.map((s) => ({ start: s.start_time, end: s.end_time })),
+      )
+    : null;
 
   return (
     <div className="day-panel">
@@ -39,20 +52,42 @@ export function DayPanel({
         </p>
       )}
 
+      {overlap && daySlots.length >= 2 && (
+        <p className="day-panel-overlap">
+          {daySlots.length === MEMBERS.length
+            ? "全員が行けます！ "
+            : "共通で行けそう: "}
+          {overlap.start.slice(0, 5)}〜{overlap.end.slice(0, 5)}
+        </p>
+      )}
+
       <ul className="member-status-list">
         {MEMBERS.map((member) => {
           const slot = daySlots.find((s) => s.member === member);
           return (
-            <li
-              key={member}
-              className={member === currentMember ? "member-status-self" : ""}
-            >
-              <span className="member-name">{member}</span>
-              <span className="member-time">
-                {slot
-                  ? `${slot.start_time.slice(0, 5)}〜${slot.end_time.slice(0, 5)}`
-                  : "未回答"}
-              </span>
+            <li key={member}>
+              <button
+                type="button"
+                className={
+                  member === currentMember
+                    ? "member-status-item member-status-self"
+                    : "member-status-item"
+                }
+                onClick={() => onSwitchMember(member)}
+              >
+                <span className="member-name">
+                  <span
+                    className="member-dot"
+                    style={{ backgroundColor: MEMBER_COLORS[member] }}
+                  />
+                  {member}
+                </span>
+                <span className="member-time">
+                  {slot
+                    ? `${slot.start_time.slice(0, 5)}〜${slot.end_time.slice(0, 5)}`
+                    : "未回答"}
+                </span>
+              </button>
             </li>
           );
         })}

@@ -1,5 +1,9 @@
-import { useState } from "react";
-import { type BusinessHours, isValidRange } from "../businessHours";
+import { useMemo, useState } from "react";
+import {
+  type BusinessHours,
+  generateTimeOptions,
+  isValidRange,
+} from "../businessHours";
 
 interface SlotFormProps {
   date: Date;
@@ -22,6 +26,22 @@ export function SlotForm({
   const [end, setEnd] = useState(initialEnd);
   const [formError, setFormError] = useState<string | null>(null);
 
+  const allTimes = useMemo(() => {
+    const generated = generateTimeOptions(hours.open, hours.close);
+    return Array.from(new Set([...generated, initialStart, initialEnd])).sort();
+  }, [hours.open, hours.close, initialStart, initialEnd]);
+
+  const startOptions = allTimes.filter((t) => t < hours.close);
+  const endOptions = allTimes.filter((t) => t > start);
+
+  function handleStartChange(value: string) {
+    setStart(value);
+    if (end <= value) {
+      const next = allTimes.find((t) => t > value);
+      if (next) setEnd(next);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const validationError = isValidRange(date, start, end);
@@ -38,25 +58,26 @@ export function SlotForm({
       <div className="slot-form-row">
         <label>
           開始
-          <input
-            type="time"
+          <select
             value={start}
-            min={hours.open}
-            max={hours.close}
-            step={900}
-            onChange={(e) => setStart(e.target.value)}
-          />
+            onChange={(e) => handleStartChange(e.target.value)}
+          >
+            {startOptions.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
           終了
-          <input
-            type="time"
-            value={end}
-            min={hours.open}
-            max={hours.close}
-            step={900}
-            onChange={(e) => setEnd(e.target.value)}
-          />
+          <select value={end} onChange={(e) => setEnd(e.target.value)}>
+            {endOptions.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
       {formError && <p className="form-error">{formError}</p>}

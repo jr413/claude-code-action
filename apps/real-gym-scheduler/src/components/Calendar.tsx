@@ -1,7 +1,8 @@
 import {
+  MEMBERS,
+  MEMBER_COLORS,
   getBusinessHours,
   intersectRanges,
-  MEMBERS,
   toDateKey,
 } from "../businessHours";
 import type { Slot } from "../types";
@@ -106,22 +107,22 @@ export function Calendar({
             >
               <span className="calendar-date">{date.getDate()}</span>
               {hours.closed ? (
-                <span className="calendar-closed-label">定休日</span>
+                <span className="calendar-closed-label">休</span>
               ) : (
-                <div className="calendar-slots">
+                <div className="calendar-dots">
                   {daySlots.map((slot) => (
-                    <span key={slot.id} className="calendar-slot-chip">
-                      {slot.member} {slot.start_time.slice(0, 5)}-
-                      {slot.end_time.slice(0, 5)}
-                    </span>
+                    <span
+                      key={slot.id}
+                      className="calendar-dot"
+                      style={{ backgroundColor: MEMBER_COLORS[slot.member] }}
+                    />
                   ))}
-                  {allFourOverlap && overlap && (
-                    <span className="calendar-match-label">
-                      全員OK {overlap.start.slice(0, 5)}-
-                      {overlap.end.slice(0, 5)}
-                    </span>
-                  )}
                 </div>
+              )}
+              {allFourOverlap && (
+                <span className="calendar-match-badge" aria-label="全員OK">
+                  ✓
+                </span>
               )}
             </button>
           );

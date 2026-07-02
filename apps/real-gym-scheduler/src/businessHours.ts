@@ -1,6 +1,13 @@
 export const MEMBERS = ["佐藤", "ジョンス", "手島", "飯田"] as const;
 export type Member = (typeof MEMBERS)[number];
 
+export const MEMBER_COLORS: Record<Member, string> = {
+  佐藤: "#4C6EF5",
+  ジョンス: "#F76707",
+  手島: "#2F9E44",
+  飯田: "#E64980",
+};
+
 export type BusinessHours =
   | { closed: true }
   | { closed: false; open: string; close: string };
@@ -41,6 +48,28 @@ export function isValidRange(
     return `営業時間内（${hours.open}〜${hours.close}）で選択してください。`;
   }
   return null;
+}
+
+// 営業時間内の選択肢を stepMinutes 刻みで列挙（例: 12:00, 12:30, ...）
+export function generateTimeOptions(
+  open: string,
+  close: string,
+  stepMinutes = 30,
+): string[] {
+  const [openH, openM] = open.split(":").map(Number);
+  const [closeH, closeM] = close.split(":").map(Number);
+  const closeMinutes = closeH * 60 + closeM;
+  const options: string[] = [];
+  for (
+    let minutes = openH * 60 + openM;
+    minutes <= closeMinutes;
+    minutes += stepMinutes
+  ) {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    options.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+  }
+  return options;
 }
 
 // 2つの時間帯の共通部分（HH:MM文字列）。重なりがなければ null。
