@@ -62,12 +62,20 @@ export default async function Home() {
 
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">小牧</h1>
-        <Link
-          href="/checkin/new"
-          className="rounded-full bg-neutral-900 px-4 py-2 text-sm font-semibold text-white"
-        >
-          チェックインする
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/requests"
+            className="text-sm font-medium text-neutral-700"
+          >
+            合流リクエスト
+          </Link>
+          <Link
+            href="/checkin/new"
+            className="rounded-full bg-neutral-900 px-4 py-2 text-sm font-semibold text-white"
+          >
+            チェックインする
+          </Link>
+        </div>
       </div>
 
       {rows.length === 0 && (

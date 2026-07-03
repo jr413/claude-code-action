@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireVerifiedUser } from "@/lib/current-user";
 import { formatRemaining } from "@/lib/time";
@@ -160,10 +161,18 @@ export default async function ShopPage({
                 </div>
               </div>
               {checkin.user_id !== profile.id && (
-                <JoinButton
-                  checkinId={checkin.id}
-                  initiallyRequested={requestedCheckinIds.has(checkin.id)}
-                />
+                <div className="flex flex-col items-end gap-1">
+                  <JoinButton
+                    checkinId={checkin.id}
+                    initiallyRequested={requestedCheckinIds.has(checkin.id)}
+                  />
+                  <Link
+                    href={`/report/new?type=checkin&id=${checkin.id}&userId=${checkin.user_id}&returnTo=/shops/${shop.id}`}
+                    className="text-xs text-neutral-400"
+                  >
+                    通報する
+                  </Link>
+                </div>
               )}
             </div>
           );
