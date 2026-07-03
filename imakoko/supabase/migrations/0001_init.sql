@@ -175,6 +175,40 @@ alter table reports enable row level security;
 alter table coupons enable row level security;
 alter table subscriptions enable row level security;
 
+-- Looks up a checkin's owner bypassing RLS. Policies below use this
+-- instead of a plain `select user_id from checkins where id = ...`
+-- subquery: that subquery is itself subject to checkins' own RLS, so once
+-- two users block each other (migration 0003's restrictive policy hides
+-- their checkins from one another), the ownership lookup would silently
+-- return no rows and any check built on it would fail open instead of
+-- closed. security definer sidesteps that entirely.
+create or replace function checkin_owner(p_checkin_id uuid)
+returns uuid
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select user_id from checkins where id = p_checkin_id;
+$$;
+
+grant execute on function checkin_owner(uuid) to authenticated, anon;
+
+-- Same rationale as checkin_owner() — bypasses RLS so the 24h message
+-- lock (below) can read a checkin's timing even when its owner has
+-- blocked the caller.
+create or replace function checkin_timing(p_checkin_id uuid)
+returns table (ended_at timestamptz, expires_at timestamptz)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select ended_at, expires_at from checkins where id = p_checkin_id;
+$$;
+
+grant execute on function checkin_timing(uuid) to authenticated, anon;
+
 -- areas / shops / coupons: public read, no client writes (admin uses
 -- the service-role key for all mutations).
 create policy "areas are publicly readable" on areas
@@ -227,14 +261,15 @@ create policy "owner can update own checkin" on checkins
 create policy "participants can read join requests" on join_requests
   for select using (
     auth.uid() = requester_id
-    or auth.uid() in (
-      select user_id from checkins where checkins.id = join_requests.checkin_id
-    )
+    or auth.uid() = checkin_owner(checkin_id)
   );
 
 create policy "verified non-banned users can create join requests" on join_requests
   for insert with check (
     auth.uid() = requester_id
+    -- prevents a requester from crafting status: "approved" directly on
+    -- insert and bypassing the checkin owner's approval entirely
+    and status = 'pending'
     and exists (
       select 1 from users
       where users.id = auth.uid()
@@ -245,9 +280,7 @@ create policy "verified non-banned users can create join requests" on join_reque
 
 create policy "checkin owner can respond to join request" on join_requests
   for update using (
-    auth.uid() in (
-      select user_id from checkins where checkins.id = join_requests.checkin_id
-    )
+    auth.uid() = checkin_owner(checkin_id)
   );
 
 -- messages: only the two participants of an *approved* join_request may
@@ -256,10 +289,9 @@ create policy "thread participants can read messages" on messages
   for select using (
     exists (
       select 1 from join_requests jr
-      join checkins c on c.id = jr.checkin_id
       where jr.id = messages.join_request_id
         and jr.status = 'approved'
-        and (auth.uid() = jr.requester_id or auth.uid() = c.user_id)
+        and (auth.uid() = jr.requester_id or auth.uid() = checkin_owner(jr.checkin_id))
     )
   );
 
@@ -267,11 +299,10 @@ create policy "thread participants can send messages" on messages
   for insert with check (
     auth.uid() = sender_id
     and exists (
-      select 1 from join_requests jr
-      join checkins c on c.id = jr.checkin_id
+      select 1 from join_requests jr, checkin_timing(jr.checkin_id) c
       where jr.id = messages.join_request_id
         and jr.status = 'approved'
-        and (auth.uid() = jr.requester_id or auth.uid() = c.user_id)
+        and (auth.uid() = jr.requester_id or auth.uid() = checkin_owner(jr.checkin_id))
         -- 24h post-expiry write lock (spec 3.5)
         and (c.ended_at is null or c.ended_at > now() - interval '24 hours')
         and c.expires_at > now() - interval '24 hours'
@@ -282,9 +313,7 @@ create policy "thread participants can send messages" on messages
 create policy "checkin participants can read meetups" on meetups
   for select using (
     auth.uid() = any (confirmed_by)
-    or auth.uid() in (
-      select user_id from checkins where checkins.id = meetups.checkin_id
-    )
+    or auth.uid() = checkin_owner(checkin_id)
   );
 
 create policy "checkin participants can confirm meetup" on meetups

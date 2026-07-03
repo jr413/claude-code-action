@@ -34,16 +34,17 @@ create policy "blocked pairs cannot see each other's checkins" on checkins
     )
   );
 
+-- Note: these use checkin_owner() (defined in 0001), not a plain subquery
+-- into checkins, precisely because that subquery would itself be subject
+-- to the restrictive select policy just above — once two users block each
+-- other, the plain form would silently see zero rows and this check would
+-- fail *open* instead of closed. See the comment on checkin_owner().
 create policy "blocked pairs cannot send join requests" on join_requests
   as restrictive for insert with check (
     not exists (
       select 1 from blocks
-      where (blocker_id = auth.uid() and blocked_id = (
-              select user_id from checkins where checkins.id = join_requests.checkin_id
-            ))
-         or (blocked_id = auth.uid() and blocker_id = (
-              select user_id from checkins where checkins.id = join_requests.checkin_id
-            ))
+      where (blocker_id = auth.uid() and blocked_id = checkin_owner(join_requests.checkin_id))
+         or (blocked_id = auth.uid() and blocker_id = checkin_owner(join_requests.checkin_id))
     )
   );
 
@@ -52,13 +53,12 @@ create policy "blocked pairs cannot message each other" on messages
     not exists (
       select 1 from blocks b
       join join_requests jr on jr.id = messages.join_request_id
-      join checkins c on c.id = jr.checkin_id
       where (
         b.blocker_id = auth.uid()
-        and b.blocked_id = case when auth.uid() = jr.requester_id then c.user_id else jr.requester_id end
+        and b.blocked_id = case when auth.uid() = jr.requester_id then checkin_owner(jr.checkin_id) else jr.requester_id end
       ) or (
         b.blocked_id = auth.uid()
-        and b.blocker_id = case when auth.uid() = jr.requester_id then c.user_id else jr.requester_id end
+        and b.blocker_id = case when auth.uid() = jr.requester_id then checkin_owner(jr.checkin_id) else jr.requester_id end
       )
     )
   );

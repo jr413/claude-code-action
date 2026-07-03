@@ -4,7 +4,9 @@
 -- reading the "active" feed, so expiry is never visibly late even though
 -- ended_at is set asynchronously.
 
-create extension if not exists pg_cron with schema extensions;
+-- pg_cron is non-relocatable (its control file pins schema = pg_catalog),
+-- so it cannot be installed into `extensions` like most other extensions.
+create extension if not exists pg_cron;
 
 create or replace function close_expired_checkins()
 returns void

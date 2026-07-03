@@ -8,7 +8,7 @@ alter table meetups add constraint meetups_checkin_id_unique unique (checkin_id)
 
 create policy "approved participants can read meetups" on meetups
   for select using (
-    auth.uid() in (select user_id from checkins where checkins.id = meetups.checkin_id)
+    auth.uid() = checkin_owner(meetups.checkin_id)
     or auth.uid() in (
       select requester_id from join_requests
       where join_requests.checkin_id = meetups.checkin_id and join_requests.status = 'approved'
@@ -17,7 +17,7 @@ create policy "approved participants can read meetups" on meetups
 
 create policy "approved participants can update meetup confirmation" on meetups
   for update using (
-    auth.uid() in (select user_id from checkins where checkins.id = meetups.checkin_id)
+    auth.uid() = checkin_owner(meetups.checkin_id)
     or auth.uid() in (
       select requester_id from join_requests
       where join_requests.checkin_id = meetups.checkin_id and join_requests.status = 'approved'
