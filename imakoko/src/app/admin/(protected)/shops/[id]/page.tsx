@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { updateShop } from "../actions";
+import { CouponManager } from "./coupon-manager";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,11 @@ export default async function EditShopPage({
     .maybeSingle();
 
   if (!shop) notFound();
+
+  const { data: coupons } = await supabase
+    .from("coupons")
+    .select("id, title, conditions, is_active")
+    .eq("shop_id", shop.id);
 
   const updateShopWithId = updateShop.bind(null, shop.id);
 
@@ -78,6 +84,15 @@ export default async function EditShopPage({
           保存する
         </button>
       </form>
+
+      {shop.partner_plan !== "none" && (
+        <div className="mt-10">
+          <h2 className="text-lg font-bold">クーポン</h2>
+          <div className="mt-4">
+            <CouponManager shopId={shop.id} coupons={coupons ?? []} />
+          </div>
+        </div>
+      )}
     </main>
   );
 }

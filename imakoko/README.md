@@ -5,10 +5,12 @@
 ## Setup
 
 1. Supabase プロジェクトを作成
-2. `supabase/migrations/` を番号順に実行(スキーマ + RLS + 失効cron + Realtime + ブロック + NGワード検知 + 合流確認)
+2. `supabase/migrations/` を番号順に実行(スキーマ + RLS + 失効cron + Realtime + ブロック + NGワード検知 + 合流確認 + システム管理列の保護 + Push購読)
 3. `supabase/seed.sql` を実行(初期エリア: 小牧)
-4. `.env.local.example` を `.env.local` にコピーし、Supabase の URL / anon key / service role key と管理画面用の `ADMIN_PASSWORD` / `ADMIN_SESSION_SECRET` を設定
+4. `.env.local.example` を `.env.local` にコピーし、Supabase の URL / anon key / service role key、管理画面用の `ADMIN_PASSWORD` / `ADMIN_SESSION_SECRET`、Stripeの `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `STRIPE_PREMIUM_PRICE_ID` を設定
 5. `bun install && bun dev`
+
+すべてのマイグレーションはローカルPostgres(pg_cron拡張込み)+Supabaseのauth/storageスキーマを再現したシムに対して実行確認済み(Docker Hubへのアクセスがブロックされた環境のため、Supabase CLIのDocker版スタックではなくネイティブPostgresで検証)。RLSポリシーは`authenticated`ロールへのなりすまし経由で複数ユーザーシナリオをテスト済み。
 
 ## 実装状況
 
@@ -39,6 +41,23 @@ Google Places連携による未登録店舗申請、エリアタブ切替、「�
 
 `interest_tags`(3.1)・`blocks`(3.6)は仕様書section 4のDB設計に列/テーブルが無かったため、画面要件を満たすために追加。
 
+### Sprint 4(収益化・PWA・磨き込み)
+
+- [x] Stripe統合: ユーザーPremiumサブスク(`/mypage`から購入・請求管理ポータルへの導線)+ Webhook(`/api/webhooks/stripe`)で`subscriptions`/`users.plan`を同期
+- [x] 無料/プレミアムのプラン制限(チェックイン1日1回・合流リクエスト1日3件、フィードでのプレミアムブースト表示)
+- [x] 管理画面: クーポン管理(`/admin/shops/[id]`、提携店のみ)
+- [x] PWA化: マニフェスト・Service Worker(インストール可能に)・Push購読のキャプチャ(送信基盤はVAPID鍵未設定のため未実装)
+- [x] 管理画面: KPIダッシュボード(`/admin/kpi`、DAU・チェックイン数・合流成立数(週次/累計)・課金者数)
+- [x] 利用規約・プライバシーポリシー(`/terms`, `/privacy`。**要弁護士レビュー、草案である旨を明記**)
+
+店舗プランは仕様書5.2の通り営業ベース(請求書払い併用)のため、Stripeでのセルフサーブ課金は実装していない(`/admin/shops`から手動設定)。
+
+このSprint 4の実装中に、既存マイグレーションの実バグを3件発見・修正:
+
+- `users`テーブルの自己更新ポリシーが`kyc_status = 'pending'`を要求しており、本人確認済みユーザー(=事実上全員)が自分のプロフィールを一切更新できなかった(0006で修正: システム管理列をトリガーで保護し、それ以外は自由に更新可能に)
+- Stripe SDKはコンストラクタでAPIキーを即座に検証するため、モジュールトップレベルでインスタンス化するとAPIキー未設定時にビルド自体が失敗していた(遅延初期化に変更)
+- `subscriptions.stripe_subscription_id`にUNIQUE制約が無く、Webhookのupsertが機能しない状態だった
+
 ### 未実装
 
-Google Places連携(未登録店舗申請)、エリアタブ切替・「今夜のマップ」ビュー、Stripe課金(ユーザーPremium/店舗プラン)、PWA化・Web Push通知、KPIダッシュボード、イベント機能(Phase 3)。
+Google Places連携(未登録店舗申請)、エリアタブ切替・「今夜のマップ」ビュー、Push通知の実際の送信基盤(VAPID鍵・配信スケジューラ)、イベント機能(Phase 3)。

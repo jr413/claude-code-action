@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toE164Japan } from "@/lib/phone";
@@ -65,6 +66,17 @@ export default function PhoneEntryPage() {
         >
           {submitting ? "送信中..." : "認証コードを送る"}
         </button>
+        <p className="text-center text-xs text-neutral-500">
+          認証コードを送信すると、
+          <Link href="/terms" className="underline">
+            利用規約
+          </Link>
+          と
+          <Link href="/privacy" className="underline">
+            プライバシーポリシー
+          </Link>
+          に同意したものとみなされます
+        </p>
       </form>
     </main>
   );

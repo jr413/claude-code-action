@@ -41,3 +41,40 @@ export async function updateShop(shopId: string, formData: FormData) {
   revalidatePath("/admin/shops");
   redirect("/admin/shops");
 }
+
+export async function createCoupon(shopId: string, formData: FormData) {
+  const supabase = createAdminClient();
+
+  const { error } = await supabase.from("coupons").insert({
+    shop_id: shopId,
+    title: String(formData.get("title")),
+    conditions: String(formData.get("conditions") || "") || null,
+  });
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/admin/shops/${shopId}`);
+}
+
+export async function toggleCouponActive(
+  couponId: string,
+  shopId: string,
+  isActive: boolean,
+) {
+  const supabase = createAdminClient();
+
+  await supabase
+    .from("coupons")
+    .update({ is_active: isActive })
+    .eq("id", couponId);
+
+  revalidatePath(`/admin/shops/${shopId}`);
+}
+
+export async function deleteCoupon(couponId: string, shopId: string) {
+  const supabase = createAdminClient();
+
+  await supabase.from("coupons").delete().eq("id", couponId);
+
+  revalidatePath(`/admin/shops/${shopId}`);
+}

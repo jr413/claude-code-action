@@ -29,13 +29,14 @@ export default async function Home() {
       userIds.length
         ? supabase
             .from("users")
-            .select("id, nickname, avatar_url")
+            .select("id, nickname, avatar_url, plan")
             .in("id", userIds)
         : Promise.resolve({
             data: [] as {
               id: string;
               nickname: string;
               avatar_url: string | null;
+              plan: string;
             }[],
           }),
       rows.length
@@ -56,6 +57,15 @@ export default async function Home() {
     (myRequests ?? []).map((r) => r.checkin_id),
   );
 
+  // Premium profiles are boosted to the top of the feed (spec 5.1). Array
+  // is already created_at desc from the query, and this sort is stable, so
+  // recency order is preserved within each plan tier.
+  rows.sort((a, b) => {
+    const aPremium = userById.get(a.user_id)?.plan === "premium" ? 0 : 1;
+    const bPremium = userById.get(b.user_id)?.plan === "premium" ? 0 : 1;
+    return aPremium - bPremium;
+  });
+
   return (
     <main className="mx-auto flex min-h-dvh max-w-lg flex-col gap-6 px-6 py-8">
       <FeedRealtimeRefresher />
@@ -68,6 +78,9 @@ export default async function Home() {
             className="text-sm font-medium text-neutral-700"
           >
             合流リクエスト
+          </Link>
+          <Link href="/mypage" className="text-sm font-medium text-neutral-700">
+            マイページ
           </Link>
           <Link
             href="/checkin/new"

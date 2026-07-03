@@ -27,5 +27,5 @@ export async function loginAction(
     path: "/",
   });
 
-  redirect("/admin/kyc");
+  redirect("/admin/kpi");
 }

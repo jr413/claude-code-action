@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { FREE_CHECKINS_PER_DAY, since24h } from "@/lib/plan-limits";
 import type { CheckinStatus } from "@/types/database";
 
 const CHECKIN_DURATION_MS = 3 * 60 * 60 * 1000;
@@ -19,6 +20,27 @@ export async function createCheckin(input: {
   } = await supabase.auth.getUser();
 
   if (!user) return { error: "ログインが必要です" };
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("plan")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profile?.plan === "free") {
+    const { count } = await supabase
+      .from("checkins")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", since24h());
+
+    if ((count ?? 0) >= FREE_CHECKINS_PER_DAY) {
+      return {
+        error:
+          "無料プランのチェックインは1日1回までです。プレミアムで無制限になります",
+      };
+    }
+  }
 
   const expiresAt = new Date(Date.now() + CHECKIN_DURATION_MS).toISOString();
 

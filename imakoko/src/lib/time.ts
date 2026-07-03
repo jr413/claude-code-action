@@ -21,3 +21,7 @@ export function isThreadLocked(effectiveEndIso: string): boolean {
     new Date(effectiveEndIso).getTime() <= Date.now() - TWENTY_FOUR_HOURS_MS
   );
 }
+
+export function isoHoursAgo(hours: number): string {
+  return new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+}
