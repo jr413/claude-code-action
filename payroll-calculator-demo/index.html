@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>給与計算シミュレーター（デモ）</title>
+    <style>
+      :root {
+        --primary: #1a56db;
+        --primary-dark: #1442a8;
+        --bg: #f4f6fb;
+        --card: #ffffff;
+        --border: #e2e6ee;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --deduct: #d64545;
+        --net: #0f9d58;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family:
+          "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      header {
+        background: linear-gradient(
+          135deg,
+          var(--primary),
+          var(--primary-dark)
+        );
+        color: #fff;
+        padding: 28px 20px;
+        text-align: center;
+      }
+      header h1 {
+        margin: 0 0 6px;
+        font-size: 1.6rem;
+      }
+      header p {
+        margin: 0;
+        font-size: 0.9rem;
+        opacity: 0.9;
+      }
+      .container {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 24px 16px 60px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      @media (max-width: 800px) {
+        .container {
+          grid-template-columns: 1fr;
+        }
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px 22px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      }
+      .card h2 {
+        font-size: 1.05rem;
+        margin: 0 0 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--primary);
+        color: var(--primary-dark);
+      }
+      .field {
+        margin-bottom: 14px;
+      }
+      .field label {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .field input[type="text"],
+      .field input[type="number"] {
+        width: 100%;
+        padding: 9px 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 0.95rem;
+      }
+      .field input:focus {
+        outline: 2px solid var(--primary);
+        border-color: var(--primary);
+      }
+      .checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+      .checkbox-row input {
+        width: 16px;
+        height: 16px;
+      }
+      .checkbox-row label {
+        font-size: 0.9rem;
+        color: var(--text);
+      }
+      .btn-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 18px;
+      }
+      button {
+        flex: 1;
+        padding: 11px 14px;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .btn-primary {
+        background: var(--primary);
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: var(--primary-dark);
+      }
+      .btn-secondary {
+        background: #eef1f7;
+        color: var(--text);
+      }
+      .btn-secondary:hover {
+        background: #e3e7f1;
+      }
+
+      .result-line {
+        display: flex;
+        justify-content: space-between;
+        padding: 7px 0;
+        font-size: 0.92rem;
+        border-bottom: 1px dashed var(--border);
+      }
+      .result-line.total {
+        font-weight: 700;
+        border-bottom: none;
+        padding-top: 10px;
+      }
+      .section-label {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin: 14px 0 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      .amount-deduct {
+        color: var(--deduct);
+      }
+      .net-pay-box {
+        margin-top: 16px;
+        background: #ecfdf3;
+        border: 1px solid #b7ebc6;
+        border-radius: 10px;
+        padding: 16px;
+        text-align: center;
+      }
+      .net-pay-box .label {
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .net-pay-box .value {
+        font-size: 1.9rem;
+        font-weight: 800;
+        color: var(--net);
+      }
+      .note {
+        font-size: 0.75rem;
+        color: var(--muted);
+        margin-top: 16px;
+        line-height: 1.5;
+      }
+      .placeholder {
+        color: var(--muted);
+        font-size: 0.9rem;
+        text-align: center;
+        padding: 40px 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>給与計算シミュレーター（デモ）</h1>
+      <p>
+        社会保険労務士事務所向け 簡易デモ画面 &mdash;
+        実際の給与計算には正式な保険料額表・源泉徴収税額表をご利用ください
+      </p>
+    </header>
+
+    <div class="container">
+      <div class="card">
+        <h2>支給・条件の入力</h2>
+
+        <div class="field">
+          <label for="name">氏名（任意）</label>
+          <input type="text" id="name" placeholder="例）山田 太郎" />
+        </div>
+
+        <div class="field">
+          <label for="baseSalary">基本給（円）</label>
+          <input type="number" id="baseSalary" value="280000" min="0" />
+        </div>
+
+        <div class="field">
+          <label for="overtimeHours">残業時間（時間／月）</label>
+          <input
+            type="number"
+            id="overtimeHours"
+            value="10"
+            min="0"
+            step="0.5"
+          />
+        </div>
+
+        <div class="field">
+          <label for="commuteAllowance">通勤手当（円）</label>
+          <input type="number" id="commuteAllowance" value="10000" min="0" />
+        </div>
+
+        <div class="field">
+          <label for="otherAllowance">役職・その他手当（円）</label>
+          <input type="number" id="otherAllowance" value="15000" min="0" />
+        </div>
+
+        <div class="field">
+          <label for="dependents">扶養人数（人）</label>
+          <input type="number" id="dependents" value="0" min="0" />
+        </div>
+
+        <div class="field">
+          <label for="residentTax"
+            >住民税（月額・特別徴収税額通知書の金額を入力）</label
+          >
+          <input type="number" id="residentTax" value="8000" min="0" />
+        </div>
+
+        <div class="checkbox-row">
+          <input type="checkbox" id="over40" />
+          <label for="over40">40歳以上65歳未満（介護保険料が発生）</label>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn-primary" onclick="calculate()">計算する</button>
+          <button class="btn-secondary" onclick="resetForm()">リセット</button>
+        </div>
+      </div>
+
+      <div class="card" id="resultCard">
+        <h2>計算結果</h2>
+        <div id="resultBody">
+          <div class="placeholder">
+            左のフォームに入力し「計算する」を押してください
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const yen = (n) => "¥" + Math.round(n).toLocaleString("ja-JP");
+
+      function calculate() {
+        const baseSalary =
+          Number(document.getElementById("baseSalary").value) || 0;
+        const overtimeHours =
+          Number(document.getElementById("overtimeHours").value) || 0;
+        const commuteAllowance =
+          Number(document.getElementById("commuteAllowance").value) || 0;
+        const otherAllowance =
+          Number(document.getElementById("otherAllowance").value) || 0;
+        const dependents =
+          Number(document.getElementById("dependents").value) || 0;
+        const residentTax =
+          Number(document.getElementById("residentTax").value) || 0;
+        const over40 = document.getElementById("over40").checked;
+
+        // 残業代（月所定労働時間 160h、割増率 1.25 で概算）
+        const hourlyRate = baseSalary / 160;
+        const overtimePay = hourlyRate * 1.25 * overtimeHours;
+
+        const grossPay =
+          baseSalary + overtimePay + commuteAllowance + otherAllowance;
+
+        // 社会保険料（協会けんぽ東京都・被保険者負担分の概算料率）
+        const healthInsurance = grossPay * 0.04905;
+        const pensionInsurance = grossPay * 0.0915;
+        const employmentInsurance = grossPay * 0.006;
+        const careInsurance = over40 ? grossPay * 0.008 : 0;
+
+        const socialInsuranceTotal =
+          healthInsurance +
+          pensionInsurance +
+          employmentInsurance +
+          careInsurance;
+
+        // 所得税（源泉徴収）は概算計算。扶養控除・給与所得控除を簡易的に反映
+        const dependentDeduction = dependents * 33000;
+        const taxableBase = Math.max(
+          grossPay - socialInsuranceTotal - dependentDeduction - 88000,
+          0,
+        );
+        const incomeTax = taxableBase * 0.05;
+
+        const deductionTotal = socialInsuranceTotal + incomeTax + residentTax;
+        const netPay = grossPay - deductionTotal;
+
+        document.getElementById("resultBody").innerHTML = `
+      <div class="section-label">支給</div>
+      <div class="result-line"><span>基本給</span><span>${yen(baseSalary)}</span></div>
+      <div class="result-line"><span>残業代（${overtimeHours}時間）</span><span>${yen(overtimePay)}</span></div>
+      <div class="result-line"><span>通勤手当</span><span>${yen(commuteAllowance)}</span></div>
+      <div class="result-line"><span>役職・その他手当</span><span>${yen(otherAllowance)}</span></div>
+      <div class="result-line total"><span>総支給額</span><span>${yen(grossPay)}</span></div>
+
+      <div class="section-label">控除</div>
+      <div class="result-line"><span>健康保険料</span><span class="amount-deduct">-${yen(healthInsurance)}</span></div>
+      <div class="result-line"><span>厚生年金保険料</span><span class="amount-deduct">-${yen(pensionInsurance)}</span></div>
+      <div class="result-line"><span>雇用保険料</span><span class="amount-deduct">-${yen(employmentInsurance)}</span></div>
+      ${over40 ? `<div class="result-line"><span>介護保険料</span><span class="amount-deduct">-${yen(careInsurance)}</span></div>` : ""}
+      <div class="result-line"><span>所得税（源泉・概算）</span><span class="amount-deduct">-${yen(incomeTax)}</span></div>
+      <div class="result-line"><span>住民税</span><span class="amount-deduct">-${yen(residentTax)}</span></div>
+      <div class="result-line total"><span>控除合計</span><span class="amount-deduct">-${yen(deductionTotal)}</span></div>
+
+      <div class="net-pay-box">
+        <div class="label">差引支給額（手取り）</div>
+        <div class="value">${yen(netPay)}</div>
+      </div>
+
+      <div class="note">
+        ※ 本ツールは説明用の簡易デモです。保険料率・所得税は概算値を使用しており、実際の金額とは異なります。<br>
+        正式な給与計算には、最新の協会けんぽ保険料額表・厚生年金保険料額表・源泉徴収税額表をご使用ください。
+      </div>
+    `;
+      }
+
+      function resetForm() {
+        document.getElementById("name").value = "";
+        document.getElementById("baseSalary").value = 280000;
+        document.getElementById("overtimeHours").value = 10;
+        document.getElementById("commuteAllowance").value = 10000;
+        document.getElementById("otherAllowance").value = 15000;
+        document.getElementById("dependents").value = 0;
+        document.getElementById("residentTax").value = 8000;
+        document.getElementById("over40").checked = false;
+        document.getElementById("resultBody").innerHTML =
+          '<div class="placeholder">左のフォームに入力し「計算する」を押してください</div>';
+      }
+    </script>
+  </body>
+</html>
