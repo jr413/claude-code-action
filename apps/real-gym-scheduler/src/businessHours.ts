@@ -1,13 +1,5 @@
-export const MEMBERS = ["佐藤", "ジョンス", "手島", "飯田", "正義"] as const;
-export type Member = (typeof MEMBERS)[number];
-
-export const MEMBER_COLORS: Record<Member, string> = {
-  佐藤: "#4C6EF5",
-  ジョンス: "#F76707",
-  手島: "#2F9E44",
-  飯田: "#E64980",
-  正義: "#9C36B5",
-};
+// メンバーは固定リストではなく members テーブル（members.ts / dataClient.ts）で管理する。
+export type Member = string;
 
 export type BusinessHours =
   | { closed: true }

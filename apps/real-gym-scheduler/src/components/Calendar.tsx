@@ -1,15 +1,11 @@
-import {
-  MEMBERS,
-  MEMBER_COLORS,
-  getBusinessHours,
-  intersectRanges,
-  toDateKey,
-} from "../businessHours";
+import { getBusinessHours, intersectRanges, toDateKey } from "../businessHours";
 import type { Slot } from "../types";
 
 interface CalendarProps {
   month: Date;
   slots: Slot[];
+  memberCount: number;
+  memberColors: Record<string, string>;
   selectedDateKey: string | null;
   onSelectDate: (dateKey: string) => void;
   onPrevMonth: () => void;
@@ -36,6 +32,8 @@ function buildMonthGrid(month: Date): Array<Date | null> {
 export function Calendar({
   month,
   slots,
+  memberCount,
+  memberColors,
   selectedDateKey,
   onSelectDate,
   onPrevMonth,
@@ -87,9 +85,10 @@ export function Calendar({
                 daySlots.map((s) => ({ start: s.start_time, end: s.end_time })),
               )
             : null;
-          const allFourOverlap =
+          const allOverlap =
             overlap &&
-            new Set(daySlots.map((s) => s.member)).size === MEMBERS.length;
+            memberCount > 0 &&
+            new Set(daySlots.map((s) => s.member)).size === memberCount;
 
           return (
             <button
@@ -99,7 +98,7 @@ export function Calendar({
                 "calendar-cell",
                 hours.closed ? "calendar-cell-closed" : "",
                 dateKey === selectedDateKey ? "calendar-cell-selected" : "",
-                allFourOverlap ? "calendar-cell-match" : "",
+                allOverlap ? "calendar-cell-match" : "",
               ]
                 .filter(Boolean)
                 .join(" ")}
@@ -114,12 +113,14 @@ export function Calendar({
                     <span
                       key={slot.id}
                       className="calendar-dot"
-                      style={{ backgroundColor: MEMBER_COLORS[slot.member] }}
+                      style={{
+                        backgroundColor: memberColors[slot.member] ?? "#8e8e93",
+                      }}
                     />
                   ))}
                 </div>
               )}
-              {allFourOverlap && (
+              {allOverlap && (
                 <span className="calendar-match-badge" aria-label="全員OK">
                   ✓
                 </span>

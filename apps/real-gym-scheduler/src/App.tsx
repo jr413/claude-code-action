@@ -1,14 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Calendar } from "./components/Calendar";
 import { DayPanel } from "./components/DayPanel";
-import { MEMBERS, MEMBER_COLORS, type Member } from "./businessHours";
+import type { Member } from "./businessHours";
 import {
+  addMember,
   DEMO_MODE,
   deleteSlot,
+  listMembers,
   listSlots,
   subscribeToChanges,
+  subscribeToMemberChanges,
   upsertSlot,
 } from "./dataClient";
+import {
+  colorForIndex,
+  DEFAULT_MEMBERS,
+  validateNewMemberName,
+  type MemberInfo,
+} from "./members";
 import type { Slot } from "./types";
 
 const MEMBER_STORAGE_KEY = "real-gym-scheduler:member";
@@ -23,8 +32,12 @@ function monthRange(month: Date) {
 
 export default function App() {
   const [currentMember, setCurrentMember] = useState<Member | null>(
-    () => (localStorage.getItem(MEMBER_STORAGE_KEY) as Member | null) ?? null,
+    () => localStorage.getItem(MEMBER_STORAGE_KEY) ?? null,
   );
+  const [members, setMembers] = useState<MemberInfo[]>(DEFAULT_MEMBERS);
+  const [newMemberName, setNewMemberName] = useState("");
+  const [addingMember, setAddingMember] = useState(false);
+  const [memberError, setMemberError] = useState<string | null>(null);
   const [month, setMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -37,6 +50,26 @@ export default function App() {
   const dayPanelRef = useRef<HTMLDivElement>(null);
 
   const { startKey, endKey } = useMemo(() => monthRange(month), [month]);
+
+  const memberColors = useMemo(() => {
+    const map: Record<string, string> = {};
+    members.forEach((m) => (map[m.name] = m.color));
+    return map;
+  }, [members]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchMembers() {
+      const { data } = await listMembers();
+      if (!cancelled && data.length > 0) setMembers(data);
+    }
+    fetchMembers();
+    const unsubscribe = subscribeToMemberChanges(fetchMembers);
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,6 +104,30 @@ export default function App() {
   function chooseMember(member: Member) {
     localStorage.setItem(MEMBER_STORAGE_KEY, member);
     setCurrentMember(member);
+  }
+
+  async function handleAddMember(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = newMemberName.trim();
+    const validationError = validateNewMemberName(trimmed, members);
+    if (validationError) {
+      setMemberError(validationError);
+      return;
+    }
+    setAddingMember(true);
+    setMemberError(null);
+    const { error: addError } = await addMember(trimmed);
+    if (addError) {
+      setMemberError(addError);
+    } else {
+      setMembers((prev) => [
+        ...prev.filter((m) => m.name !== trimmed),
+        { name: trimmed, color: colorForIndex(prev.length) },
+      ]);
+      setNewMemberName("");
+      chooseMember(trimmed);
+    }
+    setAddingMember(false);
   }
 
   async function handleSave(start: string, end: string) {
@@ -135,20 +192,30 @@ export default function App() {
         <h1>REAL ジム スケジューラー</h1>
         <p>あなたの名前を選んでください</p>
         <div className="member-picker-list">
-          {MEMBERS.map((member) => (
+          {members.map((member) => (
             <button
-              key={member}
+              key={member.name}
               type="button"
-              style={{
-                borderColor: MEMBER_COLORS[member],
-                color: MEMBER_COLORS[member],
-              }}
-              onClick={() => chooseMember(member)}
+              style={{ borderColor: member.color, color: member.color }}
+              onClick={() => chooseMember(member.name)}
             >
-              {member}
+              {member.name}
             </button>
           ))}
         </div>
+        <form className="add-member-form" onSubmit={handleAddMember}>
+          <input
+            type="text"
+            value={newMemberName}
+            placeholder="新しい人の名前"
+            maxLength={12}
+            onChange={(e) => setNewMemberName(e.target.value)}
+          />
+          <button type="submit" disabled={addingMember}>
+            {addingMember ? "追加中..." : "追加"}
+          </button>
+        </form>
+        {memberError && <p className="form-error">{memberError}</p>}
       </div>
     );
   }
@@ -171,7 +238,7 @@ export default function App() {
       <header className="app-header">
         <h1>REAL ジム スケジューラー</h1>
         <div className="app-header-right">
-          <span style={{ color: MEMBER_COLORS[currentMember] }}>
+          <span style={{ color: memberColors[currentMember] }}>
             {currentMember} さん
           </span>
           <button type="button" onClick={() => setCurrentMember(null)}>
@@ -186,6 +253,8 @@ export default function App() {
         <Calendar
           month={month}
           slots={slots}
+          memberCount={members.length}
+          memberColors={memberColors}
           selectedDateKey={selectedDateKey}
           onSelectDate={setSelectedDateKey}
           onPrevMonth={() =>
@@ -200,6 +269,7 @@ export default function App() {
             <DayPanel
               date={selectedDate}
               daySlots={daySlots}
+              members={members}
               currentMember={currentMember}
               saving={saving}
               error={error}

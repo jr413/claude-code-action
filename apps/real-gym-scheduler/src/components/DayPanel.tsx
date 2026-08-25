@@ -1,16 +1,16 @@
 import {
-  MEMBERS,
-  MEMBER_COLORS,
   getBusinessHours,
   intersectRanges,
   type Member,
 } from "../businessHours";
+import type { MemberInfo } from "../members";
 import type { Slot } from "../types";
 import { SlotForm } from "./SlotForm";
 
 interface DayPanelProps {
   date: Date;
   daySlots: Slot[];
+  members: MemberInfo[];
   currentMember: Member;
   saving: boolean;
   error: string | null;
@@ -22,6 +22,7 @@ interface DayPanelProps {
 export function DayPanel({
   date,
   daySlots,
+  members,
   currentMember,
   saving,
   error,
@@ -54,7 +55,7 @@ export function DayPanel({
 
       {overlap && daySlots.length >= 2 && (
         <p className="day-panel-overlap">
-          {daySlots.length === MEMBERS.length
+          {daySlots.length === members.length
             ? "全員が行けます！ "
             : "共通で行けそう: "}
           {overlap.start.slice(0, 5)}〜{overlap.end.slice(0, 5)}
@@ -62,25 +63,25 @@ export function DayPanel({
       )}
 
       <ul className="member-status-list">
-        {MEMBERS.map((member) => {
-          const slot = daySlots.find((s) => s.member === member);
+        {members.map((member) => {
+          const slot = daySlots.find((s) => s.member === member.name);
           return (
-            <li key={member}>
+            <li key={member.name}>
               <button
                 type="button"
                 className={
-                  member === currentMember
+                  member.name === currentMember
                     ? "member-status-item member-status-self"
                     : "member-status-item"
                 }
-                onClick={() => onSwitchMember(member)}
+                onClick={() => onSwitchMember(member.name)}
               >
                 <span className="member-name">
                   <span
                     className="member-dot"
-                    style={{ backgroundColor: MEMBER_COLORS[member] }}
+                    style={{ backgroundColor: member.color }}
                   />
-                  {member}
+                  {member.name}
                 </span>
                 <span className="member-time">
                   {slot

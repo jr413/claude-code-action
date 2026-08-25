@@ -1,9 +1,34 @@
 -- REAL ジムスケジューラー: Supabase スキーマ
 -- Supabase の SQL Editor でこのファイルの内容を実行してください。
+-- 既存のプロジェクトを members テーブル対応に更新する場合は
+-- supabase/migrate_add_members_table.sql を実行してください。
+
+create table if not exists public.members (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  color text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.members enable row level security;
+
+create policy "anon can read members" on public.members
+  for select to anon using (true);
+
+create policy "anon can insert members" on public.members
+  for insert to anon with check (true);
+
+insert into public.members (name, color) values
+  ('佐藤', '#4C6EF5'),
+  ('ジョンス', '#F76707'),
+  ('手島', '#2F9E44'),
+  ('飯田', '#E64980'),
+  ('正義', '#9C36B5')
+on conflict (name) do nothing;
 
 create table if not exists public.slots (
   id uuid primary key default gen_random_uuid(),
-  member text not null check (member in ('佐藤', 'ジョンス', '手島', '飯田', '正義')),
+  member text not null references public.members (name) on update cascade,
   slot_date date not null,
   start_time time not null,
   end_time time not null,
