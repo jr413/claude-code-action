@@ -3,7 +3,7 @@
 
 create table if not exists public.slots (
   id uuid primary key default gen_random_uuid(),
-  member text not null check (member in ('佐藤', 'ジョンス', '手島', '飯田')),
+  member text not null check (member in ('佐藤', 'ジョンス', '手島', '飯田', '正義')),
   slot_date date not null,
   start_time time not null,
   end_time time not null,
@@ -29,7 +29,7 @@ create index if not exists slots_slot_date_idx on public.slots (slot_date);
 
 alter table public.slots enable row level security;
 
--- 4人だけで使う身内アプリのため、ログインなしで匿名キーからの
+-- 身内だけで使うアプリのため、ログインなしで匿名キーからの
 -- 読み書きを許可する。外部公開する場合はここにメンバー認証を追加すること。
 create policy "anon can read slots" on public.slots
   for select to anon using (true);
