@@ -8,40 +8,53 @@
 - ログインなし。初回に自分の名前を選ぶだけ（端末に記憶される）
 - 名前選択画面から新しいメンバーをいつでも追加可能（色は自動で割り当て）
 
-## セットアップ
+データベースは Cloudflare D1（Workerに直接バインドする無料のSQLite）を使っています。
+Supabaseのような外部サービスのURL・APIキーの設定は不要です。
 
-### 1. Supabase プロジェクトを作成
+## セットアップ（Cloudflare）
 
-1. https://supabase.com で無料プロジェクトを作成
-2. SQL Editor で `supabase/schema.sql` の内容を実行し、`members` / `slots` テーブルを作成
-3. 「Project Settings > API」から Project URL と anon public key を控える
+### 1. D1データベースを作成
 
-すでに `slots` テーブルだけ作成済み（メンバー追加機能より前のバージョン）の場合は、
-代わりに `supabase/migrate_add_members_table.sql` を SQL Editor で実行してください。
+1. Cloudflareダッシュボード →「Workers & Pages」→「D1」→「Create database」
+2. 名前は `real-gym-scheduler` など好きなものでOK
+3. 作成後に表示される **Database ID** を控える
 
-💡 **Suggestion**: Supabaseのアカウント作成・プロジェクト発行はブラウザでの操作が必要なため、ユーザー自身で行ってください。
+💡 **Suggestion**: Cloudflareアカウント作成・データベース発行はブラウザでの操作が必要なため、ユーザー自身で行ってください。
 
-### 2. 環境変数を設定
+### 2. wrangler.jsonc にDatabase IDを設定
 
-```bash
-cp .env.example .env
-```
+`wrangler.jsonc` の `d1_databases[0].database_id` を、手順1で控えたIDに書き換える。
 
-`.env` に控えた URL と anon key を設定する。
+### 3. テーブルを作成
 
-```
-VITE_SUPABASE_URL=https://xxxxx.supabase.co
-VITE_SUPABASE_ANON_KEY=xxxxx
-```
-
-### 3. 起動
+D1データベースの「Console」タブで `d1/schema.sql` の内容を実行するか、次のコマンドで実行する。
 
 ```bash
-bun install
-bun run dev
+npx wrangler d1 execute real-gym-scheduler --remote --file=d1/schema.sql
 ```
+
+### 4. WorkerにD1をバインドしてデプロイ
+
+Gitと連携済みなら、`wrangler.jsonc` の変更をpushすれば次回ビルドで自動的にバインドされる。
+手動デプロイする場合は:
+
+```bash
+npm run build
+npx wrangler deploy
+```
+
+### 5. ローカル開発
+
+```bash
+npm install
+npx wrangler dev
+```
+
+`npx wrangler dev` はローカル用のD1を自動で用意するので、追加設定なしでAPIごと動作確認できる
+（`bun run dev` / `vite` 単体だとAPI（`/api/*`）が無いのでデータの読み書きができない点に注意）。
 
 ## 注意事項
 
-- 身内だけで使う想定のため、Supabase の匿名キーで誰でも読み書きできる設定になっている（認証なし）。不特定多数に公開する場合はメンバー認証の追加が必要。
+- 身内だけで使う想定のため、認証なしで誰でも読み書きできる設定になっている。不特定多数に公開する場合はメンバー認証の追加が必要。
 - 1人1日1件の予定のみ登録可能（同じ日に再登録すると上書きされる）。
+- リアルタイム同期ではなく5秒間隔のポーリングで最新状態を取得している。

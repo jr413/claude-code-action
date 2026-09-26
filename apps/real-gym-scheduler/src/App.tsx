@@ -4,7 +4,6 @@ import { DayPanel } from "./components/DayPanel";
 import type { Member } from "./businessHours";
 import {
   addMember,
-  DEMO_MODE,
   deleteSlot,
   listMembers,
   listSlots,
@@ -183,12 +182,6 @@ export default function App() {
   if (!currentMember) {
     return (
       <div className="member-picker">
-        {DEMO_MODE && (
-          <p className="demo-banner">
-            デモモード:
-            Supabase未接続のため、データはこの端末のブラウザにのみ保存されます。
-          </p>
-        )}
         <h1>REAL ジム スケジューラー</h1>
         <p>あなたの名前を選んでください</p>
         <div className="member-picker-list">
@@ -229,12 +222,6 @@ export default function App() {
 
   return (
     <div className="app">
-      {DEMO_MODE && (
-        <p className="demo-banner">
-          デモモード:
-          Supabase未接続のため、データはこの端末のブラウザにのみ保存されます。
-        </p>
-      )}
       <header className="app-header">
         <h1>REAL ジム スケジューラー</h1>
         <div className="app-header-right">
