@@ -11,7 +11,7 @@
     {
       "binding": "DB",
       "database_name": "real-gym-scheduler",
-      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "database_id": "a416807c-efd2-4ad3-8cb5-d411f3c06f84",
     },
   ],
 }
