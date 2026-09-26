@@ -119,24 +119,24 @@ with tab_overview:
         st.subheader("投稿時間帯ヒートマップ（曜日 × 時間）")
         heat = df.pivot_table(index="weekday", columns="hour", values="post_id", aggfunc="count", fill_value=0)
         heat = heat.reindex(index=WEEKDAYS, columns=range(24), fill_value=0)
-        st.plotly_chart(px.imshow(heat, aspect="auto", color_continuous_scale="Blues"), use_container_width=True)
+        st.plotly_chart(px.imshow(heat, aspect="auto", color_continuous_scale="Blues"), width="stretch")
 
         left, right = st.columns(2)
         with left:
             st.subheader("コンテンツ分類")
             cats = category_distribution(df)
-            st.plotly_chart(px.pie(values=cats.values, names=cats.index), use_container_width=True)
+            st.plotly_chart(px.pie(values=cats.values, names=cats.index), width="stretch")
         with right:
             st.subheader("メディア利用率")
             st.bar_chart(pd.Series(media_usage_rate(df)))
 
         st.subheader("エンゲージメントの推移")
-        st.plotly_chart(px.line(df.sort_values("created_at"), x="created_at", y="engagement_score", markers=True), use_container_width=True)
+        st.plotly_chart(px.line(df.sort_values("created_at"), x="created_at", y="engagement_score", markers=True), width="stretch")
 
         st.subheader("よく使われるハッシュタグ")
         tags = top_hashtags(df)
         if tags:
-            st.dataframe(pd.DataFrame(tags, columns=["hashtag", "count"]), use_container_width=True)
+            st.dataframe(pd.DataFrame(tags, columns=["hashtag", "count"]), width="stretch")
         else:
             st.caption("ハッシュタグは見つかりませんでした。")
 
@@ -154,7 +154,7 @@ with tab_success:
         st.subheader("人気投稿一覧")
         st.dataframe(
             top_posts(df, top_pct=top_pct)[["created_at", "text", "engagement_score", "content_category", "like_count", "repost_count"]],
-            use_container_width=True,
+            width="stretch",
         )
 
 with tab_compare:
@@ -166,12 +166,12 @@ with tab_compare:
         if comparison.empty:
             st.info("選択したアカウントの投稿データがありません。")
         else:
-            st.dataframe(comparison, use_container_width=True)
-            st.plotly_chart(px.bar(comparison, x="account_username", y="avg_engagement"), use_container_width=True)
+            st.dataframe(comparison, width="stretch")
+            st.plotly_chart(px.bar(comparison, x="account_username", y="avg_engagement"), width="stretch")
             me = next((a.username for a in accounts if a.is_self and a.username in chosen), None)
             if me:
                 st.subheader(f"自分（@{me}）との差分（自分 − 相手）")
-                st.dataframe(diff_against_self(comparison, me), use_container_width=True)
+                st.dataframe(diff_against_self(comparison, me), width="stretch")
 
 with tab_export:
     selected = st.selectbox("アカウント", account_names, key="export")
