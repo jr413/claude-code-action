@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:worker": "npm run build && npx wrangler dev",
+    "deploy": "npm run build && npx wrangler deploy",
+    "d1:schema": "npx wrangler d1 execute real-gym-scheduler --remote --file=d1/schema.sql"
   },
   "dependencies": {
     "react": "^18.3.1",

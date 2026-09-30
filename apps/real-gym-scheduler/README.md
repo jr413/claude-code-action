@@ -33,25 +33,48 @@ D1データベースの「Console」タブで `d1/schema.sql` の内容を実行
 npx wrangler d1 execute real-gym-scheduler --remote --file=d1/schema.sql
 ```
 
-### 4. WorkerにD1をバインドしてデプロイ
-
-Gitと連携済みなら、`wrangler.jsonc` の変更をpushすれば次回ビルドで自動的にバインドされる。
-手動デプロイする場合は:
+### 4. デプロイ
 
 ```bash
-npm run build
-npx wrangler deploy
+npm run deploy
 ```
+
+`npm run build` → `wrangler deploy` を続けて実行する。
+**`wrangler deploy` 単体はビルドし直さない**ので、必ず `npm run deploy` を使うこと
+（ビルド忘れだと古い `dist/` がそのままアップロードされる）。
+Cloudflareダッシュボード側のGit連携による自動デプロイは使わない（別リポジトリのコピーを見ていて同期されないため）。
 
 ### 5. ローカル開発
 
 ```bash
 npm install
-npx wrangler dev
+npm run dev:worker
 ```
 
-`npx wrangler dev` はローカル用のD1を自動で用意するので、追加設定なしでAPIごと動作確認できる
-（`bun run dev` / `vite` 単体だとAPI（`/api/*`）が無いのでデータの読み書きができない点に注意）。
+`wrangler dev` はローカル用のD1を自動で用意するので、追加設定なしでAPIごと動作確認できる
+（`vite` 単体だとAPI（`/api/*`）が無いのでデータの読み書きができない点に注意）。
+
+## Cloudflare CLI（wrangler）早見表
+
+初回だけログインする（ブラウザが開いて認可するだけ。以降は不要）。
+
+```bash
+npx wrangler login
+npx wrangler whoami          # ログイン中のアカウント確認
+```
+
+| やりたいこと                   | コマンド                                                                                                                           |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| ビルド+デプロイ                | `npm run deploy`                                                                                                                   |
+| ローカルで動作確認             | `npm run dev:worker`                                                                                                               |
+| 本番DBにテーブル作成           | `npm run d1:schema`                                                                                                                |
+| 本番DBの中身を見る             | `npx wrangler d1 execute real-gym-scheduler --remote --command "select * from members"`                                            |
+| 本番の予定を見る               | `npx wrangler d1 execute real-gym-scheduler --remote --command "select * from slots order by slot_date"`                           |
+| 本番の予定を1件消す            | `npx wrangler d1 execute real-gym-scheduler --remote --command "delete from slots where member='佐藤' and slot_date='2026-10-07'"` |
+| Workerのログをリアルタイム表示 | `npx wrangler tail real-gym-scheduler`                                                                                             |
+| 直前のデプロイに戻す           | `npx wrangler rollback`                                                                                                            |
+
+`--remote` を付けないとローカル用のD1が対象になる。本番を触るときは必ず付ける。
 
 ## 注意事項
 
