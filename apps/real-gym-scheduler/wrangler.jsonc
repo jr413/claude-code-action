@@ -1,0 +1,17 @@
+{
+  "name": "real-gym-scheduler",
+  "compatibility_date": "2026-09-26",
+  "main": "src/worker.ts",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "real-gym-scheduler",
+      "database_id": "a416807c-efd2-4ad3-8cb5-d411f3c06f84",
+    },
+  ],
+}
